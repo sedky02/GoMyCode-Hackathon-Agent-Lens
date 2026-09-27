@@ -1,69 +1,282 @@
-# AgentLens: hidden-failure observability for AI agents
+# AgentLens
 
-AgentLens ingests AI-agent traces through an SDK and API. It re-analyzes only the sessions
-that changed, detects hidden failures with deterministic rules plus an optional LLM judge,
-groups findings into ranked issues with embeddings, and shows the evidence in a dashboard.
+AgentLens finds the AI-agent sessions that look successful but aren't. It collects agent traces,
+detects hidden failures, groups them into ranked issues and shows the evidence for each verdict.
 
-```
-agent → agentlens/sdk.py → POST /v1/events (agentlens/api.py) → agentlens.db
-      → POST /v1/analyze: snapshot hash → rules → classify → [LLM judge if uncertain] → findings
-      → MiniLM embeddings + clustering → ranked issues → React dashboard (dashboard/)
-```
+Built for the SupplyzPro "Find the Hidden Failures" hackathon, on a synthetic dataset of 120 ERP
+assistant sessions.
 
-## Run the demo
+## The problem
+
+AI agents inside business software usually fail quietly. The tool call returns `success`, the
+agent answers confidently and nothing is logged as an error, yet the user gets a wrong answer.
+These are real cases from the SupplyzPro assistant logs:
+
+| What the user sees | What actually happened | Failure type |
+|---|---|---|
+| "You have 11 Samsung TV 43-inch in stock." | The agent looked up the **65-inch** model and reported its stock | `wrong_record` |
+| "Your order is confirmed." | `create_order` returned an error | `unsupported_success` |
+| "Delivery is scheduled for tomorrow." | The tool returned `delivery_date: null` | `incomplete_request` |
+| The same search three times in a row | The agent never changed its query | `no_progress` |
+| "Can you give me the customer ID?" | The user had already given it | `repeated_question` |
+
+These failures are hard to catch for three reasons:
+
+- **Error rates and status codes miss them.** Most of these sessions have no failed tool call at all.
+- **The same surface pattern means different things.** A retry after an error can be a recovery
+  or a failure, and a clarifying question can be good behavior or a sign the agent is lost. What
+  decides the outcome is whether the tool arguments match the request, whether the results support
+  the final claim, and how the conversation ends.
+- **Reading traces by hand doesn't scale,** and a list of 30 bad sessions doesn't tell a team
+  which problem to fix first.
+
+## The solution
+
+AgentLens is an observability layer that sits next to the agent:
+
+1. **Capture.** A small Python SDK, or a plain HTTP call, logs every user message, tool call,
+   tool result and agent reply.
+2. **Detect.** Deterministic rules compare the user's request, the tool arguments, the tool
+   results and the agent's final claim. Each session gets an outcome (`success`, `recovered`,
+   `failed` or `ambiguous`), a subtype, a confidence score, a reason, and the exact event IDs that
+   prove it.
+3. **Get a second opinion.** An optional LLM judge, reachable at any OpenAI-compatible endpoint,
+   reviews sessions. In `hybrid` mode it only sees sessions the rules are unsure about, which keeps
+   cost low. Verdicts are cached by trace hash.
+4. **Analyze incrementally.** Every session's trace is hashed, so a run only re-analyzes sessions
+   that are new or changed. In the demo, the second run analyzes 10 sessions and skips the other 110.
+5. **Prioritize.** Failures are embedded with MiniLM, clustered into issues, and ranked by
+   `priority = 100 · √(sessions / max_sessions) · severity · confidence`.
+6. **Explain.** The dashboard shows the outcome breakdown and the ranked issues. For each session,
+   it shows a trace view that highlights the value the agent got wrong.
+
+**Results.** Against the dataset's hidden labels, rules-only mode gets 100% outcome accuracy,
+100% macro F1 and 100% subtype accuracy. The evidence event IDs overlap the labeled evidence with
+a Jaccard score of 0.79. The data is synthetic, so a perfect score shows that the pipeline works
+end to end, not that it generalizes. The rules check structure (arguments against the user's
+words, results against claims, how a session ends) rather than matching phrases.
+
+## Run it locally
+
+**Prerequisites:** Python 3.10+, Node.js 20.19+ (or 22.12+) and npm. The first analysis run downloads the
+MiniLM embedding model (about 90 MB) once.
+
+### 1. Install the backend
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu \
-  && .venv/bin/pip install -r requirements.txt
-.venv/bin/uvicorn agentlens.api:app --port 8100          # terminal 1 (port 8000 is used by another app)
-cd dashboard && npm install && npm run dev               # terminal 2 → http://localhost:5173
+python3 -m venv .venv
+.venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu   # CPU-only PyTorch
+.venv/bin/pip install -r requirements.txt
 ```
 
-On the dashboard's Overview page, use the demo buttons in order: **Send wave 1**, **Run analysis**,
-**Send wave 2**, **Run analysis** again. The second run analyzes only the 10 changed sessions and
-skips the other 110. Analysis runs in the background with a live progress bar. **Reset demo**
-clears everything except the cached LLM verdicts, so rehearsals are fast. Don't delete
-`agentlens.db`, because that throws away the cache.
+### 2. Configure the LLM judge (optional)
+
+AgentLens runs in rules-only mode out of the box. To add the judge, copy the example config and
+fill it in. The `.env` file in the project root is loaded automatically.
+
+```bash
+cp .env.example .env
+.venv/bin/python -m agentlens.judge --check      # checks the endpoint and key, and lists model ids
+```
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `AGENTLENS_LLM_BASE_URL` | empty | OpenAI-compatible endpoint ending in `/v1` (for example vLLM or NIM on Brev, Ollama, or build.nvidia.com) |
+| `AGENTLENS_LLM_MODEL` | empty | Model id exposed by that endpoint |
+| `AGENTLENS_LLM_API_KEY` | `EMPTY` | Sent as a bearer token |
+| `AGENTLENS_MODE` | `hybrid` if the judge is configured, otherwise `rules` | `rules`, `hybrid` (judge only uncertain sessions) or `llm` (judge every session). Falls back to `rules` when the judge isn't configured. |
+| `AGENTLENS_JUDGE_CONCURRENCY` | `4` | Parallel judge requests |
+| `AGENTLENS_DB` | `./agentlens.db` | Path of the AgentLens database |
+
+### 3. Start the API
+
+```bash
+.venv/bin/uvicorn agentlens.api:app --port 8100
+```
+
+The API listens on port 8100 because another app uses port 8000 on the development machine.
+Interactive API docs are at http://localhost:8100/docs.
+
+### 4. Start the dashboard
+
+```bash
+cd dashboard
+npm install
+npm run dev          # http://localhost:5173
+```
+
+The dashboard calls `http://localhost:8100` by default. You can override this with `VITE_API_URL`
+in `dashboard/.env` (see `dashboard/.env.example`). If the API can't be reached, the dashboard
+falls back to bundled mock data and the top bar shows **Mock data**. Set `VITE_USE_MOCK=1` to
+always use mock data.
+
+### 5. Run the demo
+
+On the dashboard's Overview page, use the buttons in order:
+
+1. **Send wave 1**: 818 events across 120 sessions, with the last two events of 10 sessions held back
+2. **Run analysis**: every session is analyzed
+3. **Send wave 2**: the 20 held-back events arrive, so those 10 sessions change
+4. **Run analysis** again: only the 10 changed sessions are analyzed, and the other 110 are skipped
+
+Analysis runs in the background with a live progress bar. **Reset demo** clears traces and
+results but keeps the cached LLM verdicts, so rehearsals are fast. Don't delete `agentlens.db`,
+because that throws the cache away.
 
 The same flow from a terminal, plus the evaluation:
 
 ```bash
 .venv/bin/python scripts/replay.py --wave 1 --analyze    # progress is printed; Ctrl+C is safe
 .venv/bin/python scripts/replay.py --wave 2 --analyze    # 10 analyzed, 110 skipped
-.venv/bin/python evaluate.py --show-errors               # scores vs ground_truth → eval_report.json
+.venv/bin/python evaluate.py --show-errors               # scores vs. ground truth → eval_report.json
+.venv/bin/python -m agentlens.judge S008                 # run the LLM judge on one session
 ```
 
-The first analysis run downloads the MiniLM model (about 90 MB) once. Run it before the demo.
+`evaluate.py` scores every available mode (`rules`, plus `llm` and `hybrid` once the judge is
+configured) and writes `eval_report.json`. The Evaluation section of the dashboard displays
+that file.
 
-**LLM judge (optional).** It works with any OpenAI-compatible endpoint, such as vLLM or NIM
-on a Brev GPU instance, Ollama, or build.nvidia.com:
+### Log your own agent
 
-```bash
-export AGENTLENS_LLM_BASE_URL=http://localhost:8000/v1 AGENTLENS_LLM_MODEL=<id from /v1/models> AGENTLENS_LLM_API_KEY=EMPTY
-.venv/bin/python -m agentlens.judge S008                 # smoke test on one session
+```python
+from agentlens.sdk import AgentLensClient
+
+client = AgentLensClient("http://localhost:8100")
+client.log_user("S001", "How many Samsung TVs do we have?")
+client.log_tool_call("S001", "get_stock", {"product_name": "Samsung TV"})
+client.log_tool_result("S001", "get_stock", {"stock_quantity": 37}, status="success", latency_ms=210)
+client.log_agent("S001", "You have 37 Samsung TVs.")
+client.flush()
+client.analyze()     # starts a run and waits for it to finish
 ```
 
-Once the judge is configured, analysis switches to `hybrid` mode: the judge runs only on
-sessions the rules are unsure about. `evaluate.py` then compares the `rules`, `llm` and
-`hybrid` modes. Judge verdicts are cached by trace hash, so the demo works offline after one run.
+## Architecture
 
-**About the scores.** The data is synthetic, so a perfect rules score shows the pipeline works
-end to end, not that it generalizes. The rules check structure (arguments against the user's
-words, results against claims, how a session ends) rather than matching phrases.
+```mermaid
+flowchart LR
+    agent["AI agent"] -- "SDK / HTTP" --> ingest["POST /v1/events"]
+    replay["scripts/replay.py<br/>dashboard demo buttons"] --> ingest
+    ingest --> db[("agentlens.db")]
+    db --> run["Incremental analysis<br/>(background thread)"]
+    run --> db
+    judge["LLM judge<br/>OpenAI-compatible endpoint"] <-.-> run
+    db --> read["Read API<br/>/v1/overview, /v1/issues, /v1/sessions"]
+    read --> ui["React dashboard"]
+    gt[("supplyzpro_agent_logs.db<br/>events + ground_truth")] -. "events only" .-> replay
+    gt -. "ground_truth" .-> eval["evaluate.py"] --> report["eval_report.json"] --> read
+```
 
-| Module | Role |
+### Analysis pipeline
+
+`POST /v1/analyze` starts a run in a background thread. The dashboard and the SDK poll
+`GET /v1/analyze/status` for progress. Each run does the following:
+
+1. **Skip unchanged sessions.** Each session's events are hashed (SHA-256 over the canonical
+   event fields). The hash is compared with `session_snapshots`, together with an analyzer
+   version that includes the mode and the judge model. If neither has changed, the session is
+   skipped.
+2. **Reconstruct.** Events are put in order and each tool call is paired with its result
+   (`reconstruct.py`).
+3. **Run the rules.** Detectors emit failure, recovery and ambiguity signals, each with a
+   confidence score and evidence events (`rules.py`).
+4. **Classify.** The session outcome is resolved in priority order: failure, then an incomplete
+   trace, then ambiguity, then recovery, then success. The result is flagged as uncertain when the
+   trace has no final agent reply, or when the final answer contains numbers that no successful
+   tool result supports (`classify.py`).
+5. **Judge (optional).** In `hybrid` mode the judge reviews uncertain sessions and sessions with
+   confidence below 0.7; in `llm` mode it reviews every session.
+   - If the judge agrees, the source becomes `hybrid` and the confidence rises.
+   - If it disagrees, its verdict wins when it is more confident, and always in `llm` mode.
+   - If the judge call fails, no snapshot is saved, so the next run retries that session.
+6. **Write.** Each session's analysis and findings are committed as soon as they are done, so an
+   interrupted run loses nothing.
+7. **Group.** Findings are split by failure type, their signatures are embedded with MiniLM
+   (falling back to TF-IDF if it is unavailable), clustered with agglomerative clustering (cosine
+   distance threshold 0.3), and ranked into issues (`grouping.py`).
+
+### Components
+
+| Path | Role |
 |---|---|
-| `agentlens/reconstruct.py` | Builds one chronological run from events and pairs each tool call with its result |
-| `agentlens/rules.py` | Detects no_progress, unsupported_success, wrong_record, incomplete_request, repeated_question, ambiguous endings, retries, search refinement and clarification rounds |
-| `agentlens/classify.py` | Resolves the outcome in order: failure, then ambiguity, then recovery, then success; flags unsupported facts as uncertain |
-| `agentlens/snapshot.py` | Stores a trace hash and analyzer version per session; unchanged sessions are skipped |
-| `agentlens/judge.py` | LLM judge that returns structured JSON and caches results |
-| `agentlens/grouping.py` | Embeds findings with MiniLM, clusters them, and scores priority as `100·√(n/max)·severity·confidence` |
-| `evaluate.py` | The only code that reads `ground_truth` |
+| `agentlens/sdk.py` | Client that buffers events, posts them to `/v1/events` in batches, and can start and wait for an analysis run |
+| `agentlens/api.py` | FastAPI app: ingestion, background analysis job, read endpoints, demo controls |
+| `agentlens/store.py` | SQLite schema and helpers for `agentlens.db` |
+| `agentlens/pipeline.py` | Incremental run: hash, rules, classify, judge, write, group |
+| `agentlens/snapshot.py` | Trace hash and analyzer version stored per session |
+| `agentlens/reconstruct.py` | Builds one ordered session and pairs each tool call with its result |
+| `agentlens/rules.py` | Detects `no_progress`, `unsupported_success`, `wrong_record`, `incomplete_request`, `repeated_question`, ambiguous endings, retries, search refinement and clarification rounds |
+| `agentlens/classify.py` | Turns rule signals into one outcome and flags uncertain cases |
+| `agentlens/judge.py` | LLM judge with a structured JSON verdict, cached by trace hash, prompt version and model |
+| `agentlens/grouping.py` | Embeds, clusters and ranks findings into issues |
+| `agentlens/demo.py` | Splits the dataset's events into two arrival waves for the demo |
+| `scripts/replay.py` | Replays the waves through the SDK from a terminal |
+| `evaluate.py` | Scores AgentLens against the hidden labels; the only code that reads `ground_truth` |
+| `generate_dataset.py` | Regenerates the synthetic dataset (deterministic, seed 42) |
+| `dashboard/` | React 19, Vite and Tailwind CSS 4 frontend |
+
+### API
+
+| Method and path | Purpose |
+|---|---|
+| `POST /v1/events` | Ingest a batch of events (`session_id`, `sequence_number`, `timestamp`, `event_type` are required). Duplicate `event_id`s are ignored. |
+| `POST /v1/analyze` | Start an incremental analysis run in the background |
+| `GET /v1/analyze/status` | Progress of the current run: phase, done/total, skipped, judge calls, last run summary |
+| `GET /v1/overview` | Totals, outcome counts, last run, and the evaluation report |
+| `GET /v1/issues` | Issues, highest priority first |
+| `GET /v1/issues/{id}` | One issue and its affected sessions with reasons |
+| `GET /v1/sessions?outcome=` | Sessions with their classified outcome, optionally filtered |
+| `GET /v1/sessions/{id}` | Full trace, analysis and findings for one session |
+| `GET /v1/demo/status` | Which demo waves have been sent |
+| `POST /v1/demo/waves/{1\|2}` | Ingest demo wave 1 or 2 |
+| `POST /v1/demo/reset` | Clear traces and results, keeping the LLM cache |
+
+### Storage
+
+`agentlens.db` is created on first use and holds these tables:
+
+- `events`: raw trace events
+- `session_snapshots`: trace hash and analyzer version per session
+- `analyses`: one verdict per session
+- `findings`: individual failures with details and evidence
+- `issues`: grouped, ranked findings
+- `llm_cache`: judge verdicts
+- `analysis_runs`: history of runs
+
+It is separate from the source dataset, `supplyzpro_agent_logs.db`.
+
+### Ground-truth isolation
+
+The dataset contains a hidden `ground_truth` table plus `sessions.outcome` and
+`sessions.metadata`. AgentLens code (`agentlens/` and `scripts/replay.py`) only reads the
+`events` table. Only `evaluate.py` reads the labels, after the analyzer has produced its
+verdicts, so the scores can't leak into detection.
+
+### Dashboard
+
+| Page | What it shows |
+|---|---|
+| Overview | Demo controls, outcome breakdown, last run (analyzed vs. reused from cache), evaluation scores, confusion matrix and mode comparison |
+| Issues | Hidden failures grouped into issues, ranked by priority |
+| Issue detail | Severity, affected sessions, confidence, tools involved, and each affected session with its reason |
+| Sessions | Every session with its outcome, subtype, confidence and deciding source, filterable by outcome |
+| Session detail | The detected mismatch (requested → queried → returned → claimed), the full trace with evidence events marked and wrong values highlighted, and the analysis and findings |
+
+## Project layout
+
+```
+agentlens/                 detection engine and API
+scripts/replay.py          replay the dataset through the SDK
+dashboard/                 React dashboard
+evaluate.py                scoring against ground truth
+generate_dataset.py        synthetic dataset generator
+supplyzpro_agent_logs.db   source dataset (events + hidden labels)
+agentlens.db               AgentLens state (created at runtime, git-ignored)
+eval_report.json           latest evaluation (git-ignored)
+```
 
 ---
 
-# SupplyzPro Agent Logs — Synthetic Dataset
+## SupplyzPro Agent Logs — Synthetic Dataset
 
 A synthetic SQLite dataset of AI agent sessions for the "Find the Hidden Failures"
 hackathon challenge. It simulates an ERP assistant (similar to SupplyzPro) handling
@@ -71,7 +284,7 @@ inventory checks, customer/order lookups, contact updates, order creation,
 cancellations, invoices, and sales reports — including realistic **hidden**
 failures, legitimate recoveries, and legitimate ambiguity.
 
-## Files
+### Files
 
 - `generate_dataset.py` — regenerates `supplyzpro_agent_logs.db` from scratch (deterministic, seeded).
 - `supplyzpro_agent_logs.db` — the SQLite database.
@@ -86,7 +299,7 @@ python3 generate_dataset.py
 It uses only the Python standard library (`sqlite3`, `json`, `random`, `itertools`,
 `datetime`). Re-running it always produces the exact same database (seed = 42).
 
-## Dataset size
+### Dataset size
 
 - 120 sessions
 - 838 events
@@ -94,9 +307,9 @@ It uses only the Python standard library (`sqlite3`, `json`, `random`, `itertool
 - Outcome distribution: 62 success / 24 recovered / 21 failed / 13 ambiguous
   (~52% / 20% / 17.5% / 10.5%)
 
-## Schema
+### Schema
 
-### `sessions`
+#### `sessions`
 
 | column        | notes |
 |---------------|-------|
@@ -106,7 +319,7 @@ It uses only the Python standard library (`sqlite3`, `json`, `random`, `itertool
 | outcome       | `success` \| `recovered` \| `failed` \| `ambiguous` (same value as `ground_truth.outcome`, denormalized onto the session for convenience) |
 | metadata      | JSON: `{channel, agent_version, locale, variant}` |
 
-### `events` — the full chronological session history
+#### `events` — the full chronological session history
 
 | column | notes |
 |---|---|
@@ -127,7 +340,7 @@ A session is always a `tool_call` immediately followed by its `tool_result` (nev
 detached), and `user_message`/`agent_message` events carry the conversational turns
 around them.
 
-### `customers`
+#### `customers`
 
 32 synthetic customers. Deliberately includes **duplicate/shared names** so
 ambiguity arises naturally:
@@ -142,14 +355,14 @@ agent merely *claimed* success while the tool errored, the phone here is
 unchanged. This is one of the cross-referencing signals for detecting
 `unsupported_success`.
 
-### `products`
+#### `products`
 
 24 products across Electronics/Computers/Appliances/Office/Accessories, with
 `stock_quantity`. Several products are intentionally similar/confusable
 (e.g. "Samsung TV 55-inch" vs "LG TV 55-inch", "iPhone 14" vs "iPhone 13"),
 enabling the `wrong_record` failure type.
 
-### `orders`
+#### `orders`
 
 74 orders: most are pre-existing "baseline" ERP history (created before any
 session), plus new orders created during `create_order` sessions. `status`
@@ -157,19 +370,19 @@ includes `pending_scheduling` for orders where a `create_order` tool call
 technically succeeded but delivery was never actually scheduled
 (`delivery_date IS NULL`) — the ground truth for that scenario.
 
-### `invoices`
+#### `invoices`
 
 20 invoices tied to a subset of shipped/delivered orders, with `amount`,
 `issued_date`, `paid_status`.
 
-### `tool_definitions`
+#### `tool_definitions`
 
 The 8 tools available to the agent: `find_customer`, `get_stock`, `find_order`,
 `get_invoice`, `create_order`, `update_order`, `update_customer`,
 `get_sales_report`. Each row has a `description` and a `parameters_json`
 sketch of its arguments.
 
-### `ground_truth` — hidden evaluation table
+#### `ground_truth` — hidden evaluation table
 
 **Do not have your analyzer read this table.** It exists only so you can score
 your own detector afterwards.
@@ -195,7 +408,7 @@ both `ambiguous` and `success`/`recovered`). The distinguishing signal is always
 in the actual tool arguments/results and how the conversation resolves, not in
 any label baked into the event content.
 
-## Scenario types (event_type patterns) and what they represent
+### Scenario types (event_type patterns) and what they represent
 
 - **`inventory_check`** — stock questions via `get_stock`. Includes clean
   success, a transient-DB-error retry that recovers, a `wrong_record` case
@@ -229,7 +442,7 @@ any label baked into the event content.
 - **`sales_report`** — `get_sales_report`. Covers success and a vague request
   with no period/category specified (`unclear_user_intent`, ambiguous).
 
-## Example SQL queries
+### Example SQL queries
 
 **1. Reconstruct one session's full timeline**
 ```sql
@@ -324,7 +537,7 @@ GROUP BY outcome, failure_type, recovery_type, ambiguity_type
 ORDER BY outcome;
 ```
 
-## Recommended queries to run before building your analyzer
+### Recommended queries to run before building your analyzer
 
 1. `SELECT outcome, COUNT(*) FROM sessions GROUP BY outcome;` — confirm the
    class balance.
@@ -350,7 +563,7 @@ ORDER BY outcome;
    `json_extract(tool_result_json,'$.order_id')` to see the corresponding
    `incomplete_request` session.
 
-## Notes on design
+### Notes on design
 
 - Every hidden failure is technically a "successful" tool call
   (`tool_status = 'success'`) except for `unsupported_success`, where the tool
