@@ -1,0 +1,9 @@
+[
+  { "issue_id": 1, "title": "Wrong record: get_stock queried a different product", "failure_type": "wrong_record", "severity": "medium", "session_count": 5, "avg_confidence": 0.93, "priority": 87.2, "tools": ["get_stock"] },
+  { "issue_id": 2, "title": "Unsupported success: agent confirmed order after create_order error", "failure_type": "unsupported_success", "severity": "high", "session_count": 4, "avg_confidence": 0.91, "priority": 82.5, "tools": ["create_order"] },
+  { "issue_id": 3, "title": "No progress: update_invoice retried with identical arguments", "failure_type": "no_progress", "severity": "high", "session_count": 3, "avg_confidence": 0.88, "priority": 71.4, "tools": ["update_invoice"] },
+  { "issue_id": 4, "title": "Incomplete request: only 1 of 2 requested items was checked", "failure_type": "incomplete_request", "severity": "medium", "session_count": 3, "avg_confidence": 0.84, "priority": 58.9, "tools": ["get_stock"] },
+  { "issue_id": 5, "title": "Repeated question: agent re-asked for the customer ID", "failure_type": "repeated_question", "severity": "low", "session_count": 2, "avg_confidence": 0.9, "priority": 41.3, "tools": ["get_customer"] },
+  { "issue_id": 6, "title": "Wrong record: get_customer returned a different customer", "failure_type": "wrong_record", "severity": "medium", "session_count": 2, "avg_confidence": 0.86, "priority": 38.7, "tools": ["get_customer"] },
+  { "issue_id": 7, "title": "Unsupported success: shipment status claimed without tool call", "failure_type": "unsupported_success", "severity": "high", "session_count": 2, "avg_confidence": 0.79, "priority": 35.0, "tools": ["get_shipment_status"] }
+]

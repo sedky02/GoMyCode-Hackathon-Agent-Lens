@@ -1,0 +1,34 @@
+{
+  "session_id": "S008",
+  "started_at": "2026-08-15 10:03:00",
+  "ended_at": "2026-08-15 10:03:09",
+  "events": [
+    { "event_id": 50, "sequence_number": 1, "timestamp": "2026-08-15 10:03:00", "event_type": "user_message", "role": "user", "content": "How many Samsung TV 43-inch do we have in stock?", "tool_name": null, "tool_arguments": null, "tool_result": null, "tool_status": null, "latency_ms": null },
+    { "event_id": 51, "sequence_number": 2, "timestamp": "2026-08-15 10:03:02", "event_type": "agent_message", "role": "assistant", "content": "Sure, let me check that for you.", "tool_name": null, "tool_arguments": null, "tool_result": null, "tool_status": null, "latency_ms": null },
+    { "event_id": 52, "sequence_number": 3, "timestamp": "2026-08-15 10:03:03", "event_type": "tool_call", "role": "assistant", "content": "Agent invokes get_stock", "tool_name": "get_stock", "tool_arguments": { "product_name": "Samsung TV 65-inch" }, "tool_result": null, "tool_status": null, "latency_ms": null },
+    { "event_id": 53, "sequence_number": 4, "timestamp": "2026-08-15 10:03:04", "event_type": "tool_result", "role": "tool", "content": null, "tool_name": "get_stock", "tool_arguments": null, "tool_result": { "product_id": "P003", "product_name": "Samsung TV 65-inch", "stock_quantity": 11 }, "tool_status": "success", "latency_ms": 340 },
+    { "event_id": 54, "sequence_number": 5, "timestamp": "2026-08-15 10:03:09", "event_type": "agent_message", "role": "assistant", "content": "You currently have 11 units of Samsung TV 43-inch in stock.", "tool_name": null, "tool_arguments": null, "tool_result": null, "tool_status": null, "latency_ms": null }
+  ],
+  "analysis": {
+    "outcome": "failed",
+    "failure_type": "wrong_record",
+    "recovery_type": null,
+    "ambiguity_type": null,
+    "confidence": 0.95,
+    "source": "rules",
+    "reason": "User asked about 'Samsung TV 43-inch' but get_stock was called with 'Samsung TV 65-inch'. The tool returned the 65-inch record (11 units) and the agent reported that quantity as the 43-inch stock — a confident, wrong answer with no error signal.",
+    "evidence_event_ids": [50, 52, 53, 54]
+  },
+  "findings": [
+    {
+      "finding_id": 3,
+      "failure_type": "wrong_record",
+      "severity": "medium",
+      "confidence": 0.95,
+      "signature": "wrong_record:get_stock:product_name",
+      "details": { "requested": "Samsung TV 43-inch", "queried": "Samsung TV 65-inch", "returned": "Samsung TV 65-inch", "claimed": "Samsung TV 43-inch" },
+      "evidence_event_ids": [50, 52, 53, 54],
+      "issue_id": 1
+    }
+  ]
+}

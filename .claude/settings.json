@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./phish-monitor/**)",
+      "Edit(./phish-monitor/**)"
+    ]
+  }
+}

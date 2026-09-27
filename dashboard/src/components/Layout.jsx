@@ -1,0 +1,73 @@
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, Link } from 'react-router-dom'
+import { getSource, subscribeSource, API_URL, FORCE_MOCK } from '../api.js'
+
+function SourceIndicator() {
+  const [source, setSource] = useState(getSource())
+  useEffect(() => subscribeSource(setSource), [])
+  const live = source === 'live'
+  const mock = source === 'mock'
+  const label = live ? 'Live API' : mock ? 'Mock data' : 'Connecting'
+  return (
+    <span
+      title={live ? `Connected to ${API_URL}` : mock ? (FORCE_MOCK ? 'VITE_USE_MOCK=1' : `Backend unreachable at ${API_URL}; showing mock data`) : 'Connecting…'}
+      className={`inline-flex items-center gap-2 text-xs ${mock ? 'text-warn' : 'text-fg-muted'}`}
+    >
+      <span className="relative flex h-2 w-2">
+        {live && <span className="absolute inset-0 animate-ping rounded-full bg-ok/40 [animation-duration:2.5s]" />}
+        <span className={`relative h-2 w-2 rounded-full ${live ? 'bg-ok' : mock ? 'bg-warn' : 'bg-fg-subtle'}`} />
+      </span>
+      <span className="hidden sm:inline">{label}</span>
+      <span className="sr-only sm:hidden">{label}</span>
+    </span>
+  )
+}
+
+const navCls = ({ isActive }) =>
+  `relative flex h-full items-center px-2.5 text-sm transition-colors sm:px-3 ${
+    isActive
+      ? 'text-fg after:absolute after:inset-x-2.5 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent sm:after:inset-x-3'
+      : 'text-fg-muted hover:text-fg'
+  }`
+
+function Logo() {
+  return (
+    <svg viewBox="0 0 32 32" className="h-6 w-6" aria-hidden>
+      <rect width="32" height="32" rx="7" className="fill-accent" />
+      <circle cx="14" cy="14" r="6.5" fill="none" stroke="white" strokeWidth="2.6" />
+      <path d="M19 19l5 5" stroke="white" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export default function Layout() {
+  return (
+    <div className="min-h-screen bg-canvas">
+      <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur">
+        <div className="mx-auto flex h-13 max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
+          <Link to="/" className="flex shrink-0 items-center gap-2.5 text-fg">
+            <Logo />
+            <span className="hidden text-[15px] font-semibold tracking-tight min-[420px]:inline">AgentLens</span>
+          </Link>
+          <nav className="flex h-full items-center">
+            <NavLink to="/" end className={navCls}>
+              Overview
+            </NavLink>
+            <NavLink to="/issues" className={navCls}>
+              Issues
+            </NavLink>
+            <NavLink to="/sessions" className={navCls}>
+              Sessions
+            </NavLink>
+          </nav>
+          <div className="ml-auto">
+            <SourceIndicator />
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
