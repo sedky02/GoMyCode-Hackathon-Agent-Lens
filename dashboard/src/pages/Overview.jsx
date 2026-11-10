@@ -165,7 +165,7 @@ function Outcomes({ outcomes, totals }) {
 function Evaluation({ ev }) {
   if (!ev) return null
   const fd = ev.failure_detection
-  const subtype = ev.subtype_accuracy ?? ev.failure_type_accuracy
+  const subtype = ev.subtype_accuracy
   const modes = ev.modes ? ['rules', 'llm', 'hybrid'].filter((k) => ev.modes[k]) : []
   const bestAcc = modes.length ? Math.max(...modes.map((k) => ev.modes[k].accuracy ?? 0)) : null
   const bestF1 = modes.length ? Math.max(...modes.map((k) => ev.modes[k].macro_f1 ?? 0)) : null

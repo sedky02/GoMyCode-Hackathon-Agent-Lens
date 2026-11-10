@@ -1,0 +1,197 @@
+{
+ "1": {
+  "issue_id": 1,
+  "title": "Unsupported success: agent claimed success although the tool failed",
+  "failure_type": "unsupported_success",
+  "severity": "high",
+  "session_count": 6,
+  "avg_confidence": 0.95,
+  "priority": 95.0,
+  "tools": [
+   "update_customer",
+   "get_stock"
+  ],
+  "sessions": [
+   {
+    "session_id": "S001",
+    "confidence": 0.95,
+    "reason": "Every update_customer call failed (last error: 'Database write conflict, the record could not be saved.'), yet the agent's final message claims success: \"Done, Rania Fekih's phone number has been updated.\"",
+    "started_at": "2026-08-13 13:21:36"
+   },
+   {
+    "session_id": "S015",
+    "confidence": 0.95,
+    "reason": "Every update_customer call failed (last error: 'Database write conflict, the record could not be saved.'), yet the agent's final message claims success: \"Done, Dorra Ayari's phone number has been updated.\"",
+    "started_at": "2026-08-18 15:02:40"
+   },
+   {
+    "session_id": "S046",
+    "confidence": 0.95,
+    "reason": "Every get_stock call failed (last error: 'Database connection timeout, please retry.'), yet the agent's final message claims success: \"You currently have 11 units of Samsung TV 65-inch in stock.\"",
+    "started_at": "2026-08-30 14:33:05"
+   },
+   {
+    "session_id": "S098",
+    "confidence": 0.95,
+    "reason": "Every update_customer call failed (last error: 'Database write conflict, the record could not be saved.'), yet the agent's final message claims success: \"Done, Fares Ltaief's phone number has been updated.\"",
+    "started_at": "2026-09-19 12:22:00"
+   },
+   {
+    "session_id": "S114",
+    "confidence": 0.95,
+    "reason": "Every update_customer call failed (last error: 'Database write conflict, the record could not be saved.'), yet the agent's final message claims success: \"Done, Syrine Gharsallah's phone number has been updated.\"",
+    "started_at": "2026-09-24 17:23:43"
+   },
+   {
+    "session_id": "S119",
+    "confidence": 0.95,
+    "reason": "Every get_stock call failed (last error: 'Database connection timeout, please retry.'), yet the agent's final message claims success: \"We have 40 iPhone 13 available right now.\"",
+    "started_at": "2026-09-26 15:18:26"
+   }
+  ]
+ },
+ "2": {
+  "issue_id": 2,
+  "title": "Incomplete request: part of the request was never done but was claimed",
+  "failure_type": "incomplete_request",
+  "severity": "high",
+  "session_count": 3,
+  "avg_confidence": 0.9,
+  "priority": 63.6,
+  "tools": [
+   "create_order"
+  ],
+  "sessions": [
+   {
+    "session_id": "S045",
+    "confidence": 0.9,
+    "reason": "The user asked for 'deliver it tomorrow'. create_order returned delivery_date=null (status: pending_scheduling), so that part was never done, but the agent claimed: \"will be delivered tomorrow\".",
+    "started_at": "2026-08-29 18:07:04"
+   },
+   {
+    "session_id": "S072",
+    "confidence": 0.9,
+    "reason": "The user asked for 'deliver it tomorrow'. create_order returned delivery_date=null (status: pending_scheduling), so that part was never done, but the agent claimed: \"will be delivered tomorrow\".",
+    "started_at": "2026-09-10 08:06:30"
+   },
+   {
+    "session_id": "S093",
+    "confidence": 0.9,
+    "reason": "The user asked for 'deliver it tomorrow'. create_order returned delivery_date=null (status: pending_scheduling), so that part was never done, but the agent claimed: \"will be delivered tomorrow\".",
+    "started_at": "2026-09-16 19:11:44"
+   }
+  ]
+ },
+ "3": {
+  "issue_id": 3,
+  "title": "Wrong record: agent queried a different entity than the user asked for",
+  "failure_type": "wrong_record",
+  "severity": "medium",
+  "session_count": 5,
+  "avg_confidence": 0.92,
+  "priority": 50.4,
+  "tools": [
+   "get_stock"
+  ],
+  "sessions": [
+   {
+    "session_id": "S008",
+    "confidence": 0.92,
+    "reason": "The user asked about 'Samsung TV 43-inch' but get_stock was called with product_name='Samsung TV 65-inch' (never mentioned by the user). The agent then reported that record's value as if it belonged to 'Samsung TV 43-inch'.",
+    "started_at": "2026-08-15 13:35:35"
+   },
+   {
+    "session_id": "S073",
+    "confidence": 0.92,
+    "reason": "The user asked about 'iPhone 14' but get_stock was called with product_name='iPhone 13' (never mentioned by the user). The agent then reported that record's value as if it belonged to 'iPhone 14'.",
+    "started_at": "2026-09-10 11:49:01"
+   },
+   {
+    "session_id": "S083",
+    "confidence": 0.92,
+    "reason": "The user asked about 'Samsung TV 55-inch' but get_stock was called with product_name='LG TV 55-inch' (never mentioned by the user). The agent then reported that record's value as if it belonged to 'Samsung TV 55-inch'.",
+    "started_at": "2026-09-12 16:34:54"
+   },
+   {
+    "session_id": "S092",
+    "confidence": 0.92,
+    "reason": "The user asked about 'Samsung Galaxy A54' but get_stock was called with product_name='Samsung Galaxy S23' (never mentioned by the user). The agent then reported that record's value as if it belonged to 'Samsung Galaxy A54'.",
+    "started_at": "2026-09-16 17:59:08"
+   },
+   {
+    "session_id": "S096",
+    "confidence": 0.92,
+    "reason": "The user asked about 'iPhone 14' but get_stock was called with product_name='iPhone 13' (never mentioned by the user). The agent then reported that record's value as if it belonged to 'iPhone 14'.",
+    "started_at": "2026-09-18 14:32:25"
+   }
+  ]
+ },
+ "4": {
+  "issue_id": 4,
+  "title": "No progress: agent repeated the same search without refining it",
+  "failure_type": "no_progress",
+  "severity": "medium",
+  "session_count": 4,
+  "avg_confidence": 0.9,
+  "priority": 44.1,
+  "tools": [
+   "find_customer"
+  ],
+  "sessions": [
+   {
+    "session_id": "S013",
+    "confidence": 0.9,
+    "reason": "find_customer was called 3 times with identical arguments {'query': 'Mohamed Karray'} and returned the identical result every time; the agent never refined the query or asked the user to clarify.",
+    "started_at": "2026-08-17 19:19:17"
+   },
+   {
+    "session_id": "S028",
+    "confidence": 0.9,
+    "reason": "find_customer was called 3 times with identical arguments {'query': 'Ahmed'} and returned the identical result every time; the agent never refined the query or asked the user to clarify.",
+    "started_at": "2026-08-26 13:53:43"
+   },
+   {
+    "session_id": "S042",
+    "confidence": 0.9,
+    "reason": "find_customer was called 3 times with identical arguments {'query': 'Mohamed Karray'} and returned the identical result every time; the agent never refined the query or asked the user to clarify.",
+    "started_at": "2026-08-29 13:20:10"
+   },
+   {
+    "session_id": "S075",
+    "confidence": 0.9,
+    "reason": "find_customer was called 3 times with identical arguments {'query': 'Ahmed'} and returned the identical result every time; the agent never refined the query or asked the user to clarify.",
+    "started_at": "2026-09-11 10:04:49"
+   }
+  ]
+ },
+ "5": {
+  "issue_id": 5,
+  "title": "Repeated question: agent re-asked for information the user already gave",
+  "failure_type": "repeated_question",
+  "severity": "low",
+  "session_count": 3,
+  "avg_confidence": 0.9,
+  "priority": 19.1,
+  "tools": [],
+  "sessions": [
+   {
+    "session_id": "S063",
+    "confidence": 0.9,
+    "reason": "The agent asked for the customer's name, but the user had already provided it ('Tarek Jendoubi') in an earlier message.",
+    "started_at": "2026-09-06 19:12:09"
+   },
+   {
+    "session_id": "S078",
+    "confidence": 0.9,
+    "reason": "The agent asked for the customer's name, but the user had already provided it ('Anis Belhaj') in an earlier message.",
+    "started_at": "2026-09-11 17:41:23"
+   },
+   {
+    "session_id": "S088",
+    "confidence": 0.9,
+    "reason": "The agent asked for the customer's name, but the user had already provided it ('Nesrine Kahlaoui') in an earlier message.",
+    "started_at": "2026-09-15 15:43:12"
+   }
+  ]
+ }
+}

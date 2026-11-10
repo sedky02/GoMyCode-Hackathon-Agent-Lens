@@ -1,21 +1,26 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link } from 'react-router-dom'
-import { getSource, subscribeSource, API_URL, FORCE_MOCK } from '../api.js'
+import { getSource, subscribeSource, API_URL } from '../api.js'
 
 function SourceIndicator() {
   const [source, setSource] = useState(getSource())
   useEffect(() => subscribeSource(setSource), [])
   const live = source === 'live'
   const mock = source === 'mock'
-  const label = live ? 'Live API' : mock ? 'Mock data' : 'Connecting'
+  const offline = source === 'offline'
+  const label = live ? 'Live API' : mock ? 'Mock data' : offline ? 'API offline' : 'Connecting'
+  const title = live
+    ? `Connected to ${API_URL}`
+    : mock
+      ? 'VITE_USE_MOCK=1: showing a bundled snapshot of real API responses'
+      : offline
+        ? `No usable response from ${API_URL}`
+        : 'Connecting…'
   return (
-    <span
-      title={live ? `Connected to ${API_URL}` : mock ? (FORCE_MOCK ? 'VITE_USE_MOCK=1' : `Backend unreachable at ${API_URL}; showing mock data`) : 'Connecting…'}
-      className={`inline-flex items-center gap-2 text-xs ${mock ? 'text-warn' : 'text-fg-muted'}`}
-    >
+    <span title={title} className={`inline-flex items-center gap-2 text-xs ${mock || offline ? 'text-warn' : 'text-fg-muted'}`}>
       <span className="relative flex h-2 w-2">
         {live && <span className="absolute inset-0 animate-ping rounded-full bg-ok/40 [animation-duration:2.5s]" />}
-        <span className={`relative h-2 w-2 rounded-full ${live ? 'bg-ok' : mock ? 'bg-warn' : 'bg-fg-subtle'}`} />
+        <span className={`relative h-2 w-2 rounded-full ${live ? 'bg-ok' : mock || offline ? 'bg-warn' : 'bg-fg-subtle'}`} />
       </span>
       <span className="hidden sm:inline">{label}</span>
       <span className="sr-only sm:hidden">{label}</span>
