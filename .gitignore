@@ -1,6 +1,7 @@
 .env
 .venv/
-agentlens.db
+agentlens.db*
 eval_report.json
 __pycache__/
+.pytest_cache/
 phish-monitor/
