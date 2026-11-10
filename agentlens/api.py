@@ -3,10 +3,11 @@
 import json
 import threading
 from datetime import datetime
+from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from . import demo
 from .pipeline import default_mode, run_incremental
@@ -31,8 +32,36 @@ def db():
         conn.close()
 
 
+Outcome = Literal["success", "recovered", "failed", "ambiguous"]
+MAX_BATCH_EVENTS = 5000
+
+
+class Event(BaseModel):
+    session_id: str = Field(min_length=1)
+    sequence_number: int
+    timestamp: str = Field(min_length=1)
+    event_type: Literal["user_message", "agent_message", "tool_call", "tool_result"]
+    event_id: int | None = None
+    role: str | None = None
+    content: str | None = None
+    tool_name: str | None = None
+    tool_arguments: dict | list | None = None
+    tool_arguments_json: str | None = None
+    tool_result: dict | list | None = None
+    tool_result_json: str | None = None
+    tool_status: Literal["success", "error"] | None = None
+    latency_ms: int | None = None
+
+    @field_validator("tool_arguments_json", "tool_result_json")
+    @classmethod
+    def must_be_json(cls, value):
+        if value is not None:
+            json.loads(value)
+        return value
+
+
 class EventBatch(BaseModel):
-    events: list[dict]
+    events: list[Event] = Field(max_length=MAX_BATCH_EVENTS)
 
 
 def _analysis(row):
@@ -53,12 +82,7 @@ def _issue(row):
 
 @app.post("/v1/events")
 def ingest(batch: EventBatch, conn=Depends(db)):
-    required = {"session_id", "sequence_number", "timestamp", "event_type"}
-    for e in batch.events:
-        missing = required - e.keys()
-        if missing:
-            raise HTTPException(422, f"event missing fields: {sorted(missing)}")
-    return {"accepted": insert_events(conn, batch.events)}
+    return {"accepted": insert_events(conn, [e.model_dump(exclude_none=True) for e in batch.events])}
 
 
 # ---- analysis runs in a background thread; clients poll /v1/analyze/status ----
@@ -173,7 +197,7 @@ def issue(issue_id: int, conn=Depends(db)):
 
 
 @app.get("/v1/sessions")
-def sessions(outcome: str | None = None, conn=Depends(db)):
+def sessions(outcome: Outcome | None = None, conn=Depends(db)):
     sql = ("SELECT e.session_id, MIN(e.timestamp) AS started_at, MAX(e.timestamp) AS ended_at, "
            "COUNT(*) AS event_count, a.outcome, a.failure_type, a.recovery_type, a.ambiguity_type, "
            "a.confidence, a.source FROM events e LEFT JOIN analyses a ON a.session_id = e.session_id ")
