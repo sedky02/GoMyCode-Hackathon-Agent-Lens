@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, TriangleAlert, RotateCw } from 'lucide-react'
+import { ArrowLeft, TriangleAlert, Inbox, RotateCw } from 'lucide-react'
 
 // ---------- data hook ----------
 export function useApi(fn, deps = []) {
@@ -68,7 +68,7 @@ export function Badge({ className = '', children, title }) {
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm px-1.5 py-0.5 text-xs font-medium ${className}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium ${className}`}
     >
       {children}
     </span>
@@ -105,10 +105,13 @@ export function SeverityBadge({ severity }) {
   )
 }
 
-export function TypeBadge({ type }) {
+// Machine identifiers (failure types, tools) render as quiet monospace tags.
+// `tone` is accepted for backwards compatibility; tags are intentionally neutral.
+// eslint-disable-next-line no-unused-vars
+export function TypeBadge({ type, tone }) {
   if (!type) return <span className="text-fg-subtle">—</span>
   return (
-    <span className="inline-block whitespace-nowrap rounded-sm bg-raised px-1.5 py-px font-mono text-[12px] font-normal text-fg">
+    <span className="inline-block whitespace-nowrap rounded bg-white/[0.06] px-1.5 py-px font-mono text-[12px] text-fg-muted">
       {type}
     </span>
   )
@@ -121,14 +124,14 @@ export function SourceBadge({ source }) {
 // ---------- actions ----------
 const BUTTON = {
   primary:
-    'bg-accent text-surface hover:bg-accent-hover disabled:bg-accent/45',
+    'bg-accent text-white hover:bg-accent-hover disabled:bg-accent/60 disabled:text-white/80',
   secondary:
-    'border border-line-strong bg-surface text-fg hover:border-fg hover:bg-raised disabled:opacity-60',
+    'border border-line-strong bg-raised text-fg hover:border-fg-subtle/60 hover:bg-[#20242a] disabled:opacity-60',
   ghost: 'text-fg-muted hover:bg-raised hover:text-fg',
 }
 
 export const buttonCls = (variant = 'secondary', extra = '') =>
-  `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-sm px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${BUTTON[variant]} ${extra}`
+  `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${BUTTON[variant]} ${extra}`
 
 export function Button({ variant = 'secondary', className = '', children, ...rest }) {
   return (
@@ -141,7 +144,7 @@ export function Button({ variant = 'secondary', className = '', children, ...res
 // ---------- layout primitives ----------
 export function Card({ className = '', children, ...rest }) {
   return (
-    <div className={`rounded-sm border border-line bg-surface ${className}`} {...rest}>
+    <div className={`rounded-lg border border-line bg-surface ${className}`} {...rest}>
       {children}
     </div>
   )
@@ -149,10 +152,10 @@ export function Card({ className = '', children, ...rest }) {
 
 export function SectionTitle({ children, description, right }) {
   return (
-    <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t-2 border-fg-subtle pt-2.5">
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
       <div className="min-w-0">
-        <h2 className="font-display text-lg font-semibold text-fg">{children}</h2>
-        {description && <p className="mt-0.5 text-sm text-fg-muted">{description}</p>}
+        <h2 className="text-sm font-semibold text-fg">{children}</h2>
+        {description && <p className="mt-0.5 text-xs text-fg-subtle">{description}</p>}
       </div>
       {right}
     </div>
@@ -161,12 +164,12 @@ export function SectionTitle({ children, description, right }) {
 
 export function PageHeader({ title, subtitle, right, back }) {
   return (
-    <div className="mb-8">
+    <div className="mb-6">
       {back && <div className="mb-3">{back}</div>}
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
-          <h1 className="font-display text-[28px] font-semibold leading-tight text-fg">{title}</h1>
-          {subtitle && <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-fg-muted">{subtitle}</p>}
+          <h1 className="text-xl font-semibold tracking-tight text-fg">{title}</h1>
+          {subtitle && <p className="mt-1 max-w-2xl text-sm text-fg-muted">{subtitle}</p>}
         </div>
         {right && <div className="flex shrink-0 items-center gap-3">{right}</div>}
       </div>
@@ -180,7 +183,7 @@ export function BackLink({ to, onClick, children }) {
     <button
       type="button"
       onClick={onClick || (() => navigate(to))}
-      className="-ml-1 inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-sm text-fg-muted transition-colors hover:text-fg"
+      className="-ml-1 inline-flex items-center gap-1 rounded px-1 py-0.5 text-sm text-fg-subtle transition-colors hover:text-fg"
     >
       <ArrowLeft className="h-3.5 w-3.5" />
       {children}
@@ -188,27 +191,25 @@ export function BackLink({ to, onClick, children }) {
   )
 }
 
-export function Figures({ className = '', children }) {
-  return <dl className={`grid grid-cols-2 gap-x-8 gap-y-5 ${className}`}>{children}</dl>
+// A row of key figures separated by hairlines. The gap-px/bg-line trick draws
+// dividers that stay correct however the grid wraps.
+const STAT_COLS = {
+  2: 'grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-3',
+  4: 'grid-cols-2 lg:grid-cols-4',
+  5: 'grid-cols-2 md:grid-cols-5',
 }
 
-export function Figure({ label, hint, className = '', children }) {
-  return (
-    <div className={`min-w-0 ${className}`}>
-      <dt className="font-display text-[13px] font-medium text-fg-muted">{label}</dt>
-      <dd className="mt-0.5 flex min-h-8 items-center font-display text-[26px] font-semibold leading-8 tabular-nums text-fg">
-        {children ?? '—'}
-      </dd>
-      {hint && <dd className="mt-0.5 text-xs text-fg-subtle">{hint}</dd>}
-    </div>
-  )
+export function StatGroup({ cols = 4, className = '', children }) {
+  return <div className={`grid gap-px bg-line ${STAT_COLS[cols]} ${className}`}>{children}</div>
 }
 
-export function Meter({ share, className = '' }) {
-  const width = Math.max(0, Math.min(1, share ?? 0)) * 100
+export function Stat({ label, value, hint, className = '' }) {
   return (
-    <div className={`h-1.5 overflow-hidden bg-line ${className}`}>
-      <div className="h-full bg-fg" style={{ width: `${width}%` }} />
+    <div className={`min-w-0 bg-surface px-4 py-3.5 ${className}`}>
+      <div className="text-xs text-fg-muted">{label}</div>
+      <div className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-fg">{value ?? '—'}</div>
+      {hint && <div className="mt-0.5 text-xs text-fg-subtle">{hint}</div>}
     </div>
   )
 }
@@ -218,7 +219,9 @@ export function ConfidenceBar({ value }) {
   return (
     <div className="flex items-center gap-2.5" title={`Confidence ${pct(value, 1)}`}>
       <span className="w-9 text-right text-sm tabular-nums text-fg">{pct(value)}</span>
-      <Meter share={v} className="w-12" />
+      <div className="h-1 w-12 overflow-hidden rounded-full bg-line-strong">
+        <div className="h-full rounded-full bg-fg-muted" style={{ width: `${v * 100}%` }} />
+      </div>
     </div>
   )
 }
@@ -228,7 +231,7 @@ export function Th({ align = 'left', className = '', children }) {
   return (
     <th
       scope="col"
-      className={`h-9 whitespace-nowrap border-b-2 border-fg-subtle px-3 font-display text-[13px] font-semibold text-fg-muted first:pl-0 ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
+      className={`h-9 whitespace-nowrap px-4 text-xs font-medium text-fg-subtle ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
     >
       {children}
     </th>
@@ -236,7 +239,7 @@ export function Th({ align = 'left', className = '', children }) {
 }
 
 export function Td({ align = 'left', className = '', children }) {
-  return <td className={`px-3 py-2.5 first:pl-0 ${align === 'right' ? 'text-right' : ''} ${className}`}>{children}</td>
+  return <td className={`px-4 py-2.5 ${align === 'right' ? 'text-right' : ''} ${className}`}>{children}</td>
 }
 
 // Whole-row navigation that also works from the keyboard.
@@ -256,7 +259,7 @@ export function LinkRow({ to, className = '', children }) {
 
 // ---------- states ----------
 export function Skeleton({ className = '' }) {
-  return <div aria-hidden className={`skeleton rounded-sm bg-raised ${className}`} />
+  return <div aria-hidden className={`skeleton rounded bg-raised ${className}`} />
 }
 
 export function Loading({ label = 'Loading…', rows = 6 }) {
@@ -298,11 +301,12 @@ export function ErrorState({ error, onRetry }) {
   )
 }
 
-export function EmptyState({ title = 'Nothing here', hint, action }) {
+export function EmptyState({ title = 'Nothing here', hint, action, icon: Icon = Inbox }) {
   return (
-    <div className="border-t-2 border-fg-subtle pt-4">
-      <div className="font-display text-lg font-semibold text-fg">{title}</div>
-      {hint && <div className="mt-1 max-w-md text-sm text-fg-muted">{hint}</div>}
+    <div className="flex flex-col items-center rounded-lg border border-dashed border-line-strong px-6 py-14 text-center">
+      <Icon className="h-5 w-5 text-fg-subtle" />
+      <div className="mt-3 text-sm font-medium text-fg">{title}</div>
+      {hint && <div className="mt-1 max-w-sm text-sm text-fg-muted">{hint}</div>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   )

@@ -1,53 +1,55 @@
 @import "tailwindcss";
 
-/* Tokens are documented in dashboard/DESIGN.md. Add a token there before using a new value. */
 @theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --radius-sm: 3px;
+  /* Surfaces: canvas < surface < raised. Borders: line < line-strong. */
+  --color-canvas: #0d0f12;
+  --color-surface: #13161a;
+  --color-raised: #1a1d22;
+  --color-line: #23272e;
+  --color-line-strong: #30353d;
 
-  /* Ledger cover: canvas is the page, surface is a lifted sheet, raised is hover and inset. */
-  --color-canvas: #151d19;
-  --color-surface: #1c2621;
-  --color-raised: #25312b;
-  --color-line: #303f37;
-  --color-line-strong: #4c6156;
+  /* Text: fg (primary) > fg-muted (secondary) > fg-subtle (labels, meta). */
+  --color-fg: #e6e8eb;
+  --color-fg-muted: #a0a6af;
+  --color-fg-subtle: #6d7480;
 
-  /* Chalk: fg > fg-muted > fg-subtle. All pass AA on canvas and surface. */
-  --color-fg: #e8ede6;
-  --color-fg-muted: #adb9b0;
-  --color-fg-subtle: #87968c;
-
-  /* Actions are chalk on the dark ground, not a separate hue. */
-  --color-accent: #e8ede6;
-  --color-accent-hover: #ffffff;
+  /* One accent, used for primary actions, links and selection only. */
+  --color-accent: #6366f1;
+  --color-accent-hover: #7477f4;
+  --color-accent-fg: #a5b0fb;
 
   /* Status: outcome and severity only. */
-  --color-ok: #5cbd88;
-  --color-info: #6bafe8;
-  --color-bad: #f2726b;
-  --color-warn: #dea54b;
-
-  /* Highlighter: marks evidence, nothing else. Always paired with evidence-ink text. */
-  --color-evidence: #ffe14d;
-  --color-evidence-ink: #3b2f00;
+  --color-ok: #3ebd83;
+  --color-info: #4aa3e0;
+  --color-bad: #ee5d6c;
+  --color-warn: #e3a73c;
+  --color-evidence: #e3a73c;
 }
 
 html { color-scheme: dark; }
-body { background: var(--color-canvas); }
-::selection { background: var(--color-evidence); color: var(--color-evidence-ink); }
+body {
+  background: var(--color-canvas);
+  font-feature-settings: "cv11", "ss01";
+}
 
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-line-strong); border-radius: 8px; border: 2px solid var(--color-canvas); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Evidence jump: brief highlight on the target event. */
 @keyframes flash-ring {
-  0% { box-shadow: 0 0 0 0 rgb(255 225 77 / 0.9); }
-  100% { box-shadow: 0 0 0 10px rgb(255 225 77 / 0); }
+  0% { box-shadow: 0 0 0 0 rgb(227 167 60 / 0.55); }
+  100% { box-shadow: 0 0 0 8px rgb(227 167 60 / 0); }
 }
 .flash { animation: flash-ring 0.9s ease-out 2; }
 
+/* A finished analysis run: brief accent outline on the updated panel. */
 @keyframes flash-accent {
-  0% { box-shadow: 0 0 0 0 rgb(232 237 230 / 0.4); }
-  100% { box-shadow: 0 0 0 8px rgb(232 237 230 / 0); }
+  0% { box-shadow: 0 0 0 0 rgb(99 102 241 / 0.5); }
+  100% { box-shadow: 0 0 0 6px rgb(99 102 241 / 0); }
 }
 .flash-accent { animation: flash-accent 0.9s ease-out 2; }
 

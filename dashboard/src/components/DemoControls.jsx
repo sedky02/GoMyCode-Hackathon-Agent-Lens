@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Play, RotateCcw, LoaderCircle, Check, CircleCheck, TriangleAlert } from 'lucide-react'
 import { api, API_URL, FORCE_MOCK } from '../api.js'
-import { Card, Button, Meter } from './ui.jsx'
+import { Card, Button } from './ui.jsx'
 
 const PHASE_LABEL = {
   starting: 'Finding changed sessions…',
@@ -15,12 +15,12 @@ const PHASE_LABEL = {
 // finished steps recede so the next one reads first.
 function StepButton({ step, icon: Icon, label, sub, onClick, disabled, busy, done, primary = false }) {
   const tone = primary
-    ? 'border-accent bg-accent text-surface hover:bg-accent-hover'
+    ? 'border-transparent bg-accent text-white hover:bg-accent-hover'
     : done
       ? 'border-line bg-transparent text-fg-muted'
-      : 'border-line-strong bg-surface text-fg hover:border-fg hover:bg-raised'
+      : 'border-line-strong bg-raised text-fg hover:border-fg-subtle/60 hover:bg-[#20242a]'
   const marker = primary
-    ? 'bg-surface/15 text-surface'
+    ? 'bg-white/15 text-white'
     : done
       ? 'bg-ok/10 text-ok'
       : 'border border-line-strong text-fg-muted'
@@ -28,7 +28,7 @@ function StepButton({ step, icon: Icon, label, sub, onClick, disabled, busy, don
     <button
       onClick={onClick}
       disabled={disabled || busy}
-      className={`flex min-w-0 flex-1 items-center gap-3 rounded-sm border px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${tone} ${
+      className={`flex min-w-0 flex-1 items-center gap-3 rounded-md border px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${tone} ${
         (disabled || busy) && !done && !busy ? 'opacity-45' : ''
       } ${done ? 'disabled:cursor-default' : ''}`}
     >
@@ -45,7 +45,7 @@ function StepButton({ step, icon: Icon, label, sub, onClick, disabled, busy, don
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-medium">{label}</span>
-        {sub && <span className={`block truncate text-xs ${primary ? 'text-surface/75' : 'text-fg-subtle'}`}>{sub}</span>}
+        {sub && <span className={`block truncate text-xs ${primary ? 'text-white/70' : 'text-fg-subtle'}`}>{sub}</span>}
       </span>
     </button>
   )
@@ -59,7 +59,7 @@ function Progress({ job }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
         <span className="flex items-center gap-2 text-fg">
-          <LoaderCircle className="h-3.5 w-3.5 animate-spin text-fg-muted" />
+          <LoaderCircle className="h-3.5 w-3.5 animate-spin text-accent-fg" />
           {PHASE_LABEL[job.phase] || job.phase}
           {job.phase === 'analyzing' && total > 0 && (
             <span className="tabular-nums text-fg-muted">
@@ -73,7 +73,9 @@ function Progress({ job }) {
           {job.current && <span className="font-mono text-fg-muted">{job.current}</span>}
         </span>
       </div>
-      <Meter share={share} className="mt-2.5" />
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-line-strong">
+        <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${share * 100}%` }} />
+      </div>
       {job.mode && job.mode !== 'rules' && (
         <p className="mt-2 text-xs text-fg-subtle">
           The LLM judge is rate-limited on free tiers, so this can take a few minutes. Results are saved as they
@@ -182,7 +184,7 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
           <div className="font-medium text-fg">Demo controls are offline</div>
           <p className="mt-1 text-fg-muted">
             They need the live API at <span className="font-mono text-fg">{API_URL}</span>. Start it with{' '}
-            <code className="break-all rounded-sm bg-raised px-1.5 py-0.5 font-mono text-xs text-fg">
+            <code className="break-all rounded bg-canvas px-1.5 py-0.5 font-mono text-xs text-fg">
               .venv/bin/uvicorn agentlens.api:app --port 8100
             </code>
           </p>
@@ -204,15 +206,13 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-3">
         <div className="min-w-0">
-          <h2 className="font-display text-[17px] font-semibold text-fg">Live demo</h2>
-          <p className="mt-0.5 text-sm text-fg-muted">Replay recorded agent traces, then analyze incrementally.</p>
+          <h2 className="text-sm font-semibold text-fg">Live demo</h2>
+          <p className="mt-0.5 text-xs text-fg-subtle">Replay recorded agent traces, then analyze incrementally.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg-muted">
+        <div className="flex items-center gap-3 text-xs text-fg-subtle">
           <span className="tabular-nums">
-            <span className="font-medium text-fg">{demo?.events_ingested ?? 0}</span> events ingested
-          </span>
-          <span>
-            Mode <span className="font-mono text-[13px] text-fg">{demo?.mode ?? '—'}</span>
+            <span className="text-fg-muted">{demo?.events_ingested ?? 0}</span> events ingested · mode{' '}
+            <span className="font-mono text-fg-muted">{demo?.mode ?? '—'}</span>
           </span>
           <Button variant="ghost" onClick={reset} disabled={locked} className="h-7 px-2 text-xs disabled:opacity-40">
             {busy === 'reset' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
@@ -225,7 +225,7 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
         <StepButton
           step={1}
           label="Send wave 1"
-          sub={w1 ? `${w1.events} events in ${w1.sessions} sessions` : ''}
+          sub={w1 ? `${w1.events} events · ${w1.sessions} sessions` : ''}
           onClick={() => sendWave(1)}
           disabled={locked || w1?.sent}
           busy={busy === 'wave1'}
@@ -265,8 +265,8 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
             {message}
           </div>
         ) : (
-          <p className="text-sm text-fg-muted">
-            Send wave 1, run analysis, send wave 2, then run analysis again and watch it skip the unchanged sessions.
+          <p className="text-xs text-fg-subtle">
+            Demo flow: send wave 1 → run analysis → send wave 2 → run analysis again (watch it skip the unchanged sessions).
           </p>
         )}
       </div>
