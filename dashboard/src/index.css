@@ -8,13 +8,14 @@
   --color-canvas: #0d0f12;
   --color-surface: #13161a;
   --color-raised: #1a1d22;
+  --color-raised-hover: #20242a;
   --color-line: #23272e;
   --color-line-strong: #30353d;
 
   /* Text: fg (primary) > fg-muted (secondary) > fg-subtle (labels, meta). */
   --color-fg: #e6e8eb;
   --color-fg-muted: #a0a6af;
-  --color-fg-subtle: #6d7480;
+  --color-fg-subtle: #7b828e;
 
   /* One accent, used for primary actions, links and selection only. */
   --color-accent: #6366f1;
@@ -25,6 +26,7 @@
   --color-ok: #3ebd83;
   --color-info: #4aa3e0;
   --color-bad: #ee5d6c;
+  --color-bad-fg: #ffb4bc;
   --color-warn: #e3a73c;
   --color-evidence: #e3a73c;
 }
@@ -33,6 +35,11 @@ html { color-scheme: dark; }
 body {
   background: var(--color-canvas);
   font-feature-settings: "cv11", "ss01";
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-fg);
+  outline-offset: 2px;
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
 import { api } from '../api.js'
 import DemoControls from '../components/DemoControls.jsx'
 import {
@@ -31,7 +30,7 @@ function LastRun({ run, justRan }) {
         right={
           run && (
             <span className="text-xs tabular-nums text-fg-subtle">
-              #{run.run_id} · {fmtTime(run.started_at)}
+              Run {run.run_id}, {fmtTime(run.started_at)}
             </span>
           )
         }
@@ -142,13 +141,10 @@ function Outcomes({ outcomes, totals }) {
                 to={`/sessions?outcome=${k}`}
                 className="group block bg-surface px-4 py-3.5 transition-colors hover:bg-raised focus-visible:bg-raised focus-visible:outline-none sm:px-5"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-2 text-sm text-fg-muted transition-colors group-hover:text-fg">
-                    <StatusDot className={m.dot} />
-                    {m.label}
-                  </span>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-fg-subtle opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
-                </div>
+                <span className="inline-flex items-center gap-2 text-sm text-fg-muted transition-colors group-hover:text-fg">
+                  <StatusDot className={m.dot} />
+                  {m.label}
+                </span>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="text-2xl font-semibold tabular-nums tracking-tight text-fg">{n}</span>
                   <span className="text-xs tabular-nums text-fg-subtle">{pct(share, 1)}</span>
@@ -173,16 +169,16 @@ function Evaluation({ ev }) {
 
   const headline = [
     <Stat key="acc" label="Accuracy" value={pct(ev.accuracy, 1)} />,
-    <Stat key="f1" label="Macro F1" value={pct(ev.macro_f1, 1)} hint={`P ${pct(ev.macro_precision)} · R ${pct(ev.macro_recall)}`} />,
+    <Stat key="f1" label="Macro F1" value={pct(ev.macro_f1, 1)} hint={`Precision ${pct(ev.macro_precision)}, recall ${pct(ev.macro_recall)}`} />,
     fd && (
       <Stat
         key="fd"
         label="Failure detection F1"
         value={pct(fd.f1, 1)}
-        hint={`Failed vs. not · P ${pct(fd.precision, 1)} · R ${pct(fd.recall, 1)}`}
+        hint={`Failed against the rest: precision ${pct(fd.precision, 1)}, recall ${pct(fd.recall, 1)}`}
       />
     ),
-    subtype != null && <Stat key="sub" label="Subtype accuracy" value={pct(subtype, 1)} hint="Failure / recovery / ambiguity type" />,
+    subtype != null && <Stat key="sub" label="Subtype accuracy" value={pct(subtype, 1)} hint="Failure, recovery and ambiguity type" />,
   ].filter(Boolean)
 
   return (
@@ -228,7 +224,7 @@ function Evaluation({ ev }) {
             </div>
           </Panel>
 
-          <Panel title="Confusion matrix" hint="Rows actual · columns predicted">
+          <Panel title="Confusion matrix" hint="Rows actual, columns predicted">
             <ConfusionMatrix cm={ev.confusion_matrix} />
           </Panel>
 
@@ -315,14 +311,14 @@ function ConfusionMatrix({ cm }) {
                 return (
                   <td
                     key={j}
-                    title={`actual ${cm.labels[i]} → predicted ${cm.labels[j]}: ${v}`}
+                    title={`actual ${cm.labels[i]}, predicted ${cm.labels[j]}: ${v}`}
                     className={`h-9 rounded text-center tabular-nums ${v ? 'font-medium text-fg' : 'text-fg-subtle/70'}`}
                     style={{
                       background: v
                         ? diag
-                          ? `rgb(99 102 241 / ${0.14 + a * 0.46})`
-                          : `rgb(238 93 108 / ${0.2 + a * 0.4})`
-                        : 'rgb(255 255 255 / 0.025)',
+                          ? `color-mix(in srgb, var(--color-accent) ${Math.round(14 + a * 46)}%, transparent)`
+                          : `color-mix(in srgb, var(--color-bad) ${Math.round(20 + a * 40)}%, transparent)`
+                        : 'color-mix(in srgb, var(--color-fg) 2.5%, transparent)',
                     }}
                   >
                     {v}

@@ -106,9 +106,7 @@ export function SeverityBadge({ severity }) {
 }
 
 // Machine identifiers (failure types, tools) render as quiet monospace tags.
-// `tone` is accepted for backwards compatibility; tags are intentionally neutral.
-// eslint-disable-next-line no-unused-vars
-export function TypeBadge({ type, tone }) {
+export function TypeBadge({ type }) {
   if (!type) return <span className="text-fg-subtle">—</span>
   return (
     <span className="inline-block whitespace-nowrap rounded bg-white/[0.06] px-1.5 py-px font-mono text-[12px] text-fg-muted">
@@ -126,7 +124,7 @@ const BUTTON = {
   primary:
     'bg-accent text-white hover:bg-accent-hover disabled:bg-accent/60 disabled:text-white/80',
   secondary:
-    'border border-line-strong bg-raised text-fg hover:border-fg-subtle/60 hover:bg-[#20242a] disabled:opacity-60',
+    'border border-line-strong bg-raised text-fg hover:border-fg-subtle/60 hover:bg-raised-hover disabled:opacity-60',
   ghost: 'text-fg-muted hover:bg-raised hover:text-fg',
 }
 

@@ -18,7 +18,7 @@ function StepButton({ step, icon: Icon, label, sub, onClick, disabled, busy, don
     ? 'border-transparent bg-accent text-white hover:bg-accent-hover'
     : done
       ? 'border-line bg-transparent text-fg-muted'
-      : 'border-line-strong bg-raised text-fg hover:border-fg-subtle/60 hover:bg-[#20242a]'
+      : 'border-line-strong bg-raised text-fg hover:border-fg-subtle/60 hover:bg-raised-hover'
   const marker = primary
     ? 'bg-white/15 text-white'
     : done
@@ -126,7 +126,7 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
             setError(`Analysis failed: ${j.error}`)
           } else if (j.last_run) {
             const r = j.last_run
-            const retry = r.judge_failures ? ` ${r.judge_failures} LLM calls failed (rate limit?) — run analysis again to retry them.` : ''
+            const retry = r.judge_failures ? ` ${r.judge_failures} LLM calls failed (rate limit?). Run analysis again to retry them.` : ''
             setMessage(
               `Run #${r.run_id}: analyzed ${r.analyzed} sessions, skipped ${r.skipped} unchanged, ` +
                 `${r.judge_calls} LLM judge calls in ${(r.duration_ms / 1000).toFixed(1)} s.${retry}`,
@@ -161,7 +161,7 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
     act(`wave${wave}`, () => api.sendWave(wave), (r) =>
       wave === 1
         ? `Wave 1 ingested: ${r.accepted} new events across ${r.sessions} sessions. Next: run analysis.`
-        : `Wave 2 ingested: ${r.accepted} new events changed ${r.sessions} sessions. Run analysis — only those ${r.sessions} will be re-analyzed.`,
+        : `Wave 2 ingested: ${r.accepted} new events changed ${r.sessions} sessions. Run analysis: only those ${r.sessions} will be re-analyzed.`,
     )
 
   const runAnalysis = () =>
@@ -211,8 +211,10 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
         </div>
         <div className="flex items-center gap-3 text-xs text-fg-subtle">
           <span className="tabular-nums">
-            <span className="text-fg-muted">{demo?.events_ingested ?? 0}</span> events ingested · mode{' '}
-            <span className="font-mono text-fg-muted">{demo?.mode ?? '—'}</span>
+            <span className="text-fg-muted">{demo?.events_ingested ?? 0}</span> events ingested
+          </span>
+          <span>
+            Mode <span className="font-mono text-fg-muted">{demo?.mode ?? '—'}</span>
           </span>
           <Button variant="ghost" onClick={reset} disabled={locked} className="h-7 px-2 text-xs disabled:opacity-40">
             {busy === 'reset' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
@@ -225,7 +227,7 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
         <StepButton
           step={1}
           label="Send wave 1"
-          sub={w1 ? `${w1.events} events · ${w1.sessions} sessions` : ''}
+          sub={w1 ? `${w1.events} events in ${w1.sessions} sessions` : ''}
           onClick={() => sendWave(1)}
           disabled={locked || w1?.sent}
           busy={busy === 'wave1'}
@@ -266,7 +268,7 @@ export default function DemoControls({ onDataChanged, onRunFinished }) {
           </div>
         ) : (
           <p className="text-xs text-fg-subtle">
-            Demo flow: send wave 1 → run analysis → send wave 2 → run analysis again (watch it skip the unchanged sessions).
+            Send wave 1, run analysis, send wave 2, then run analysis again and watch it skip the unchanged sessions.
           </p>
         )}
       </div>

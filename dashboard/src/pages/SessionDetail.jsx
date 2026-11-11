@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
 import { api } from '../api.js'
 import {
   useApi,
@@ -92,7 +91,7 @@ export default function SessionDetail() {
       if (info.claimed?.mismatch) {
         textMarks.push({
           value: display(info.claimed.value),
-          cls: 'bg-bad/20 text-[#ffc9cf] ring-1 ring-bad/50',
+          cls: 'bg-bad/20 text-bad-fg ring-1 ring-bad/50',
           title: `Claimed "${display(info.claimed.value)}" but ${info.claimed.refKey} was "${display(f.details[info.claimed.refKey])}"`,
         })
       }
@@ -143,22 +142,22 @@ export default function SessionDetail() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
           <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xl font-semibold tracking-tight text-fg">
-            <span className="font-mono">{data.session_id}</span>
+            Session {data.session_id}
             {analysis && <OutcomeBadge outcome={analysis.outcome} size="lg" />}
             {analysis?.failure_type && <TypeBadge type={analysis.failure_type} />}
           </h1>
-          <div className="mt-1.5 flex flex-wrap gap-x-2 text-sm tabular-nums text-fg-subtle">
+          <div className="mt-1.5 flex flex-wrap gap-x-4 text-sm tabular-nums text-fg-subtle">
             <span>{fmtTime(data.started_at)}</span>
-            {dur && <span>· {dur} duration</span>}
-            <span>· {events.length} events</span>
-            <span>· {evidenceIds.size} evidence events</span>
+            {dur && <span>{dur} long</span>}
+            <span>{events.length} events</span>
+            <span>{evidenceIds.size} evidence events</span>
           </div>
         </div>
         {issueIds.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {issueIds.map((iid) => (
               <Link key={iid} to={`/issues/${iid}`} className={buttonCls('secondary')}>
-                Part of issue #{iid} <ArrowUpRight className="h-3.5 w-3.5 text-fg-muted" />
+                Part of issue #{iid}
               </Link>
             ))}
           </div>
@@ -260,7 +259,7 @@ export default function SessionDetail() {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       <TypeBadge type={f.failure_type} />
                       <SeverityBadge severity={f.severity} />
-                      <span className="ml-auto text-xs tabular-nums text-fg-subtle">{pct(f.confidence)} conf.</span>
+                      <span className="ml-auto text-xs tabular-nums text-fg-subtle">{pct(f.confidence)} confidence</span>
                     </div>
                     {f.tool && (
                       <div className="mt-2 text-xs text-fg-subtle">
@@ -271,9 +270,9 @@ export default function SessionDetail() {
                     {f.issue_id != null && (
                       <Link
                         to={`/issues/${f.issue_id}`}
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent-fg hover:text-fg"
+                        className="mt-2 inline-block text-xs font-medium text-accent-fg hover:text-fg"
                       >
-                        View issue #{f.issue_id} <ArrowUpRight className="h-3 w-3" />
+                        View issue #{f.issue_id}
                       </Link>
                     )}
                   </li>

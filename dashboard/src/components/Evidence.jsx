@@ -31,7 +31,7 @@ const SYNTAX = {
   string: 'text-[#93cfa8]',
   literal: 'text-[#b4a2ee]',
   number: 'text-[#e0b872]',
-  flagged: 'rounded-sm bg-bad/20 px-0.5 text-[#ffb4bc] ring-1 ring-bad/50',
+  flagged: 'rounded-sm bg-bad/20 px-0.5 text-bad-fg ring-1 ring-bad/50',
 }
 
 // Tokenize a JSON string and color it; string tokens whose value is in `redValues` get flagged.
@@ -205,10 +205,8 @@ function Meta({ ev, label, evidence }) {
   return (
     <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 text-xs">
       <span className="font-medium text-fg">{label}</span>
-      <span className="font-mono text-[11px] text-fg-subtle">
-        seq {ev.sequence_number ?? '?'} · ev {ev.event_id}
-        {ev.timestamp && <> · {fmtTime(ev.timestamp).slice(11)}</>}
-      </span>
+      {ev.timestamp && <span className="tabular-nums text-fg-subtle">{fmtTime(ev.timestamp).slice(11)}</span>}
+      <span className="tabular-nums text-fg-subtle">event {ev.event_id}</span>
       {evidence && <span className="text-[11px] font-medium text-evidence">Evidence</span>}
     </div>
   )
@@ -277,7 +275,7 @@ export function Timeline({ events = [], evidenceIds = new Set(), redValues = [],
                   </span>
                 )}
               </div>
-              <pre className={`overflow-x-auto px-3.5 py-2.5 font-mono text-[13px] leading-relaxed ${err ? 'text-[#ffb4bc]' : 'text-fg-muted'}`}>
+              <pre className={`overflow-x-auto px-3.5 py-2.5 font-mono text-[13px] leading-relaxed ${err ? 'text-bad-fg' : 'text-fg-muted'}`}>
                 <JsonCode text={text} redValues={redValues} />
               </pre>
             </div>

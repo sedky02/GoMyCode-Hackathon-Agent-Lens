@@ -18,10 +18,7 @@ function SourceIndicator() {
         : 'Connecting…'
   return (
     <span title={title} className={`inline-flex items-center gap-2 text-xs ${mock || offline ? 'text-warn' : 'text-fg-muted'}`}>
-      <span className="relative flex h-2 w-2">
-        {live && <span className="absolute inset-0 animate-ping rounded-full bg-ok/40 [animation-duration:2.5s]" />}
-        <span className={`relative h-2 w-2 rounded-full ${live ? 'bg-ok' : mock || offline ? 'bg-warn' : 'bg-fg-subtle'}`} />
-      </span>
+      <span className={`h-2 w-2 rounded-full ${live ? 'bg-ok' : mock || offline ? 'bg-warn' : 'bg-fg-subtle'}`} />
       <span className="hidden sm:inline">{label}</span>
       <span className="sr-only sm:hidden">{label}</span>
     </span>
@@ -48,7 +45,7 @@ function Logo() {
 export default function Layout() {
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-line bg-canvas">
         <div className="mx-auto flex h-13 max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
           <Link to="/" className="flex shrink-0 items-center gap-2.5 text-fg">
             <Logo />

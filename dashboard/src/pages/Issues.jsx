@@ -63,7 +63,7 @@ export default function Issues() {
                   <Th>Issue</Th>
                   <Th>Severity</Th>
                   <Th align="right">Sessions</Th>
-                  <Th align="right">Avg conf.</Th>
+                  <Th align="right">Avg confidence</Th>
                   <Th className="w-56">Priority</Th>
                   <th className="w-8" />
                 </tr>
