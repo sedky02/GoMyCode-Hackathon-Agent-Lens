@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Install
+        run: |
+          pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements-dev.txt
+      - name: Tests
+        run: python -m pytest -q
+      - name: Evaluate on the committed dataset (seed 42)
+        run: python evaluate.py --mode rules --min-accuracy 0.95 --min-macro-f1 0.95
+      - name: Evaluate on a held-out seed
+        run: |
+          python generate_dataset.py --seed 7 --out heldout.db
+          python evaluate.py --mode rules --db heldout.db --min-accuracy 0.95 --min-macro-f1 0.95
+      - name: Evaluate on out-of-template sessions (regression floor, not a target)
+        run: python evaluate.py --mode rules --db data/out_of_template_sessions.json --show-errors --min-accuracy 0.70
+      - name: End-to-end analysis through the API
+        run: |
+          uvicorn agentlens.api:app --port 8100 &
+          for attempt in $(seq 1 30); do curl -sf http://localhost:8100/healthz && break; sleep 1; done
+          python scripts/replay.py --wave 1 --analyze
+          python scripts/replay.py --wave 2 --analyze
+          curl -sf http://localhost:8100/v1/overview | python -c "
+          import json, sys
+          overview = json.load(sys.stdin)
+          print(overview['totals'], overview['outcomes'], overview['last_run'])
+          assert overview['totals']['sessions'] == 120 and overview['totals']['issues'] >= 1
+          assert (overview['last_run']['analyzed'], overview['last_run']['skipped']) == (10, 110)
+          "
+
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run build
