@@ -7,9 +7,9 @@ rules-only mode; rerun it before publishing if the code has changed.
 
 Start from a clean state for all of them: `docker compose up --build`, open
 http://localhost:5173, click **Reset demo** if any data is present. Use a 1440 px wide browser
-window and hide the bookmarks bar. The dashboard has one theme (light).
+window, dark theme as shipped, and hide the bookmarks bar.
 
-Screens 1, 2 and 4 are already captured in `docs/img/` (1556 px wide, top of each page only).
+Screens 1, 2 and 4 are already captured in `docs/img/` (1440 px wide, top of each page only).
 Retake them at full size for the portfolio.
 
 | # | Screen | State it must be in |
