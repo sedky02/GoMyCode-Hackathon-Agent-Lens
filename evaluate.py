@@ -7,11 +7,13 @@ every session and compares its verdicts to the labels.
     python evaluate.py --mode rules
     python evaluate.py --show-errors
     python evaluate.py --db heldout.db --min-accuracy 0.95    # another dataset, fail below a threshold
+    python evaluate.py --db data/out_of_template_sessions.json --show-errors
 """
 
 import argparse
 import json
 import sqlite3
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from agentlens import judge
@@ -26,7 +28,47 @@ EVENT_COLUMNS = ["event_id", "session_id", "sequence_number", "timestamp", "even
                  "tool_name", "tool_arguments_json", "tool_result_json", "tool_status", "latency_ms"]
 
 
-def load(db_path=SOURCE_DB):
+def load(dataset=SOURCE_DB):
+    """Returns ({session_id: event rows}, {session_id: label}) from a SQLite dataset or a JSON fixture."""
+    if Path(dataset).suffix == ".json":
+        return load_json_fixture(dataset)
+    return load_sqlite(dataset)
+
+
+def load_json_fixture(path):
+    sessions, truth = {}, {}
+    event_id = 0
+    clock = datetime(2026, 1, 1, 9, 0, 0)
+    for entry in json.loads(Path(path).read_text())["sessions"]:
+        sid = entry["session_id"]
+        rows = []
+
+        def add(event_type, role, content, **fields):
+            nonlocal event_id, clock
+            event_id += 1
+            clock += timedelta(seconds=5)
+            rows.append({**dict.fromkeys(EVENT_COLUMNS), "event_id": event_id, "session_id": sid,
+                         "sequence_number": len(rows) + 1, "timestamp": clock.strftime("%Y-%m-%d %H:%M:%S"),
+                         "event_type": event_type, "role": role, "content": content, **fields})
+
+        for event in entry["events"]:
+            if "user" in event:
+                add("user_message", "user", event["user"])
+            elif "agent" in event:
+                add("agent_message", "assistant", event["agent"])
+            else:
+                name = event["tool"]
+                add("tool_call", "assistant", f"Agent invokes {name}", tool_name=name,
+                    tool_arguments_json=json.dumps(event["args"]))
+                add("tool_result", "tool", f"{name} returned", tool_name=name,
+                    tool_result_json=json.dumps(event["result"]), tool_status=event.get("status", "success"))
+        sessions[sid] = rows
+        truth[sid] = {"failure_type": None, "recovery_type": None, "ambiguity_type": None,
+                      "evidence_event_ids": None, **entry["label"]}
+    return sessions, truth
+
+
+def load_sqlite(db_path):
     src = sqlite3.connect(f"file:{Path(db_path).resolve()}?mode=ro", uri=True)
     src.row_factory = sqlite3.Row
     sessions = {}
@@ -74,7 +116,7 @@ def score(preds, truth):
 
     jaccards = []
     for s in sids:
-        if truth[s]["outcome"] == "failed" and preds[s]["outcome"] == "failed":
+        if truth[s]["outcome"] == "failed" and preds[s]["outcome"] == "failed" and truth[s]["evidence_event_ids"]:
             gt_ids, pred_ids = set(json.loads(truth[s]["evidence_event_ids"])), set(preds[s]["evidence_event_ids"])
             if gt_ids | pred_ids:
                 jaccards.append(len(gt_ids & pred_ids) / len(gt_ids | pred_ids))
@@ -116,7 +158,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["rules", "llm", "hybrid", "all"], default="all")
     parser.add_argument("--show-errors", action="store_true")
-    parser.add_argument("--db", type=Path, default=SOURCE_DB, help="dataset to score (default: the committed one)")
+    parser.add_argument("--db", type=Path, default=SOURCE_DB, help="SQLite dataset or JSON fixture to score (default: the committed dataset)")
     parser.add_argument("--report", type=Path,
                         help=f"where to write the JSON report (default: {REPORT.name}, only for the default dataset)")
     parser.add_argument("--min-accuracy", type=float, help="exit non-zero if accuracy is below this (0-1)")

@@ -48,3 +48,13 @@ def test_threshold_failure_exits_non_zero(tmp_path):
     result = run_evaluate("--report", str(tmp_path / "report.json"), "--min-accuracy", "1.01")
     assert result.returncode != 0
     assert "FAILED threshold" in result.stderr
+
+
+def test_out_of_template_fixture_loads_with_valid_labels_and_can_be_scored():
+    sessions, truth = evaluate.load(ROOT / "data" / "out_of_template_sessions.json")
+    assert sessions.keys() == truth.keys() and len(sessions) >= 12
+    assert {label["outcome"] for label in truth.values()} == set(evaluate.LABELS)
+    for rows in sessions.values():
+        assert [r["sequence_number"] for r in rows] == list(range(1, len(rows) + 1))
+    metrics = evaluate.score(evaluate.predict(sessions, "rules"), truth)
+    assert metrics["sessions"] == len(sessions)

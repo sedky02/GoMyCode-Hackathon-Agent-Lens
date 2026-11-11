@@ -1,0 +1,161 @@
+{
+  "description": "Hand-written sessions from a different domain (SaaS support desk) with tools and phrasing the rules were not built on. Labels were written before the rules were run on them. Only evaluate.py may read the labels.",
+  "sessions": [
+    {
+      "session_id": "OT01",
+      "label": {"outcome": "success"},
+      "events": [
+        {"user": "What plan is acme-corp on?"},
+        {"tool": "get_subscription", "args": {"account": "acme-corp"}, "result": {"account": "acme-corp", "plan": "Team", "seats": 25, "renews_on": "2027-01-14"}},
+        {"agent": "acme-corp is on the Team plan with 25 seats, renewing on 2027-01-14."}
+      ]
+    },
+    {
+      "session_id": "OT02",
+      "label": {"outcome": "success"},
+      "events": [
+        {"user": "Refund invoice INV-2291, the customer was double charged."},
+        {"tool": "issue_refund", "args": {"invoice_id": "INV-2291"}, "result": {"refund_id": "RF-88", "amount": 49.0, "status": "processed"}},
+        {"agent": "Refund RF-88 for $49.00 has been processed for INV-2291."}
+      ]
+    },
+    {
+      "session_id": "OT03",
+      "label": {"outcome": "success"},
+      "events": [
+        {"user": "Where's the shipment for Dana?"},
+        {"tool": "lookup_account", "args": {"query": "Dana"}, "result": {"count": 2, "matches": [{"account_id": "A-310", "name": "Dana Whitfield"}, {"account_id": "A-311", "name": "Dana Okafor"}]}},
+        {"agent": "I see two accounts named Dana: Dana Whitfield and Dana Okafor. Which one?"},
+        {"user": "Okafor."},
+        {"tool": "get_shipment", "args": {"account_id": "A-311"}, "result": {"status": "in_transit", "carrier": "DHL", "eta": "2026-12-03"}},
+        {"agent": "Dana Okafor's shipment is in transit with DHL, arriving 2026-12-03."}
+      ]
+    },
+    {
+      "session_id": "OT04",
+      "label": {"outcome": "success"},
+      "events": [
+        {"user": "Which urgent tickets are still open?"},
+        {"tool": "search_tickets", "args": {"status": "open", "priority": "urgent"}, "result": {"count": 3, "tickets": [{"ticket_id": "T-501"}, {"ticket_id": "T-507"}, {"ticket_id": "T-512"}]}},
+        {"agent": "There are 3 open urgent tickets: T-501, T-507 and T-512."}
+      ]
+    },
+    {
+      "session_id": "OT05",
+      "label": {"outcome": "recovered", "recovery_type": "retry_success"},
+      "events": [
+        {"user": "Maria at Northwind is locked out, please send her a password reset."},
+        {"tool": "reset_password", "args": {"email": "maria@northwind.io"}, "result": {"error": "Service temporarily unavailable"}, "status": "error"},
+        {"agent": "That didn't go through, trying once more."},
+        {"tool": "reset_password", "args": {"email": "maria@northwind.io"}, "result": {"sent_to": "maria@northwind.io", "expires_in_minutes": 30}},
+        {"agent": "A reset link has been sent to maria@northwind.io. It expires in 30 minutes."}
+      ]
+    },
+    {
+      "session_id": "OT06",
+      "label": {"outcome": "recovered", "recovery_type": "corrected_tool_arguments"},
+      "events": [
+        {"user": "Book the onboarding call for Lumen Health on December 3rd at 3pm."},
+        {"tool": "book_meeting", "args": {"account": "lumen-health", "date": "12/03/2026", "time": "15:00"}, "result": {"error": "Invalid date format, expected YYYY-MM-DD"}, "status": "error"},
+        {"tool": "book_meeting", "args": {"account": "lumen-health", "date": "2026-12-03", "time": "15:00"}, "result": {"meeting_id": "M-204", "status": "confirmed"}},
+        {"agent": "The onboarding call for Lumen Health is booked for 2026-12-03 at 15:00."}
+      ]
+    },
+    {
+      "session_id": "OT07",
+      "label": {"outcome": "recovered", "recovery_type": "search_refinement"},
+      "events": [
+        {"user": "Pull up the open ticket from Hassan at Brightline about SSO."},
+        {"tool": "search_tickets", "args": {"query": "Hassan"}, "result": {"count": 4, "tickets": [{"ticket_id": "T-640"}, {"ticket_id": "T-701"}, {"ticket_id": "T-733"}, {"ticket_id": "T-790"}]}},
+        {"tool": "search_tickets", "args": {"query": "Hassan", "company": "Brightline", "topic": "SSO"}, "result": {"count": 1, "tickets": [{"ticket_id": "T-733", "title": "SSO login loop", "opened": "2026-11-20"}]}},
+        {"agent": "That's ticket T-733, \"SSO login loop\", opened on 2026-11-20."}
+      ]
+    },
+    {
+      "session_id": "OT08",
+      "label": {"outcome": "failed", "failure_type": "wrong_record"},
+      "events": [
+        {"user": "How many seats does the globex-eu workspace have?"},
+        {"tool": "get_subscription", "args": {"account": "globex-us"}, "result": {"account": "globex-us", "plan": "Enterprise", "seats": 140}},
+        {"agent": "The globex-eu workspace has 140 seats."}
+      ]
+    },
+    {
+      "session_id": "OT09",
+      "label": {"outcome": "failed", "failure_type": "unsupported_success"},
+      "events": [
+        {"user": "Cancel the subscription for initech at the end of the billing period."},
+        {"tool": "cancel_subscription", "args": {"account": "initech", "when": "period_end"}, "result": {"error": "Permission denied: account is locked by billing"}, "status": "error"},
+        {"agent": "All set, initech's subscription will end at the close of the current billing period."}
+      ]
+    },
+    {
+      "session_id": "OT10",
+      "label": {"outcome": "failed", "failure_type": "incomplete_request"},
+      "events": [
+        {"user": "Refund INV-7710 and email the customer a confirmation."},
+        {"tool": "issue_refund", "args": {"invoice_id": "INV-7710", "notify_customer": true}, "result": {"refund_id": "RF-91", "status": "processed", "confirmation_email_sent_at": null}},
+        {"agent": "I've refunded INV-7710 and the customer has been emailed a confirmation."}
+      ]
+    },
+    {
+      "session_id": "OT11",
+      "label": {"outcome": "failed", "failure_type": "no_progress"},
+      "events": [
+        {"user": "Find the ticket where a customer complained about a missing refund."},
+        {"tool": "search_tickets", "args": {"query": "refund"}, "result": {"count": 12, "truncated": true}},
+        {"agent": "Checking."},
+        {"tool": "search_tickets", "args": {"query": "refund"}, "result": {"count": 12, "truncated": true}},
+        {"agent": "Still looking."},
+        {"tool": "search_tickets", "args": {"query": "refund"}, "result": {"count": 12, "truncated": true}},
+        {"agent": "I'm still looking into this for you."}
+      ]
+    },
+    {
+      "session_id": "OT12",
+      "label": {"outcome": "failed", "failure_type": "repeated_question"},
+      "events": [
+        {"user": "My email is priya@kestrel.dev and I can't log in."},
+        {"agent": "Sorry to hear that. What's the email address on the account?"},
+        {"user": "priya@kestrel.dev, as I said."},
+        {"tool": "reset_password", "args": {"email": "priya@kestrel.dev"}, "result": {"sent_to": "priya@kestrel.dev", "expires_in_minutes": 30}},
+        {"agent": "A reset link is on its way to priya@kestrel.dev."}
+      ]
+    },
+    {
+      "session_id": "OT13",
+      "label": {"outcome": "ambiguous", "ambiguity_type": "missing_information"},
+      "events": [
+        {"user": "Send me the invoice."},
+        {"agent": "Happy to. Which account or invoice number is this for?"}
+      ]
+    },
+    {
+      "session_id": "OT14",
+      "label": {"outcome": "ambiguous", "ambiguity_type": "multiple_customers"},
+      "events": [
+        {"user": "Upgrade Jordan's workspace to Enterprise."},
+        {"tool": "lookup_account", "args": {"query": "Jordan"}, "result": {"count": 3, "matches": [{"account_id": "A-101", "name": "Jordan Lee"}, {"account_id": "A-164", "name": "Jordan Mbeki"}, {"account_id": "A-208", "name": "Jordan Castillo"}]}},
+        {"agent": "Three workspaces belong to someone named Jordan (Jordan Lee, Jordan Mbeki, Jordan Castillo). Which one should I upgrade?"}
+      ]
+    },
+    {
+      "session_id": "OT15",
+      "label": {"outcome": "failed", "failure_type": "unsupported_success"},
+      "events": [
+        {"user": "What's the outstanding balance for vertex-labs?"},
+        {"tool": "get_balance", "args": {"account": "vertex-labs"}, "result": {"account": "vertex-labs", "outstanding": 1200.0, "currency": "USD"}},
+        {"agent": "vertex-labs currently owes $2,100.00."}
+      ]
+    },
+    {
+      "session_id": "OT16",
+      "label": {"outcome": "success"},
+      "events": [
+        {"user": "How much did we bill umbra-studio in October?"},
+        {"tool": "get_billing_summary", "args": {"account": "umbra-studio", "period": "2026-10"}, "result": {"total": 18450.5, "invoices": 6, "currency": "USD"}},
+        {"agent": "umbra-studio was billed $18,450.50 across 6 invoices in October."}
+      ]
+    }
+  ]
+}
