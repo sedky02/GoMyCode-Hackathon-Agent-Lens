@@ -8,11 +8,13 @@ messages, tool calls, tool results), master ERP data (customers, products, order
 invoices), tool definitions, and a hidden ground_truth table for evaluation.
 
 Run:
-    python3 generate_dataset.py
+    python3 generate_dataset.py                              # the committed dataset (seed 42)
+    python3 generate_dataset.py --seed 7 --out heldout.db    # same scenario templates, different entities and values
 
 Recreates the database from scratch every time (deterministic, seeded RNG).
 """
 
+import argparse
 import sqlite3
 import json
 import random
@@ -1032,8 +1034,8 @@ def random_start_time(rng, base_date):
     return base_date + timedelta(days=offset_days, hours=hour, minutes=minute)
 
 
-def main():
-    rng = random.Random(SEED)
+def main(seed=SEED, db_path=DB_PATH):
+    rng = random.Random(seed)
     world = World(rng)
     build_customers(world)
     build_products(world)
@@ -1083,7 +1085,7 @@ def main():
         })
 
     # --- write to SQLite ---
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(db_path)
     conn.executescript(SCHEMA_SQL)
 
     conn.executemany(
@@ -1145,4 +1147,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
+    parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument("--out", default=DB_PATH, help="path of the SQLite file to (re)create")
+    args = parser.parse_args()
+    main(args.seed, args.out)
