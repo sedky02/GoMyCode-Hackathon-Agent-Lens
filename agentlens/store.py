@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -98,22 +99,38 @@ EVENT_COLUMNS = [
 ]
 
 
+_schema_lock = threading.Lock()
+_schema_ready = set()
+
+
 def connect(path=None):
+    path = Path(path or DB_PATH)
     # FastAPI may open a request's connection in one threadpool thread and use it in another.
-    conn = sqlite3.connect(path or DB_PATH, timeout=30, check_same_thread=False)
+    conn = sqlite3.connect(path, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.executescript(SCHEMA)
-    _add_missing_columns(conn)
+    _ensure_schema(conn, path)
     return conn
 
 
-def _add_missing_columns(conn):
-    for table, columns in ADDED_COLUMNS.items():
-        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
-        for name, definition in columns.items():
-            if name not in existing:
-                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+def _ensure_schema(conn, path):
+    """Create or upgrade the schema once per database file.
+    Concurrent connections switching to WAL at the same time fail with "database is locked"."""
+    with _schema_lock:
+        if path in _schema_ready and _has_tables(conn):
+            return
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.executescript(SCHEMA)
+        for table, columns in ADDED_COLUMNS.items():
+            existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+            for name, definition in columns.items():
+                if name not in existing:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
+        conn.commit()
+        _schema_ready.add(path)
+
+
+def _has_tables(conn):
+    return conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'events'").fetchone() is not None
 
 
 def _json_text(value):
