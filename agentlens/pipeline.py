@@ -1,6 +1,7 @@
 """Incremental analysis: hash → skip unchanged → rules → (LLM judge if needed) → findings → issues."""
 
 import json
+import logging
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -15,6 +16,7 @@ from .snapshot import ANALYSIS_VERSION, needs_analysis, save_snapshot, trace_has
 from .store import connect, session_events, session_ids
 from .taxonomy import SUBTYPE_FIELD
 
+logger = logging.getLogger(__name__)
 JUDGE_BELOW_CONFIDENCE = 0.7
 
 
@@ -154,10 +156,12 @@ def run_incremental(conn=None, mode=None, progress=None):
                "analyzed": analyzed, "skipped": skipped, "judge_calls": judge_calls,
                "judge_failures": judge_failures, "duration_ms": int((time.time() - started) * 1000),
                "mode": mode}
-    cur = conn.execute("INSERT INTO analysis_runs (started_at, analyzed, skipped, judge_calls, duration_ms) "
-                       "VALUES (?, ?, ?, ?, ?)", (summary["started_at"], analyzed, skipped, judge_calls,
-                                                 summary["duration_ms"]))
+    cur = conn.execute(
+        "INSERT INTO analysis_runs (started_at, analyzed, skipped, judge_calls, duration_ms, mode, judge_failures) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (summary["started_at"], analyzed, skipped, judge_calls, summary["duration_ms"], mode, judge_failures))
     conn.commit()
+    logger.info("analysis run %s: %s", cur.lastrowid, summary)
     return {"run_id": cur.lastrowid, **summary}
 
 

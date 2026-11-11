@@ -97,3 +97,21 @@ def test_verdicts_do_not_depend_on_the_hidden_labels(tmp_path, monkeypatch):
     with_labels = verdicts()
     monkeypatch.setattr(demo, "SOURCE_DB", stripped)
     assert verdicts() == with_labels
+
+
+def test_databases_created_before_run_mode_was_recorded_are_upgraded(tmp_path):
+    old = tmp_path / "old.db"
+    conn = sqlite3.connect(old)
+    conn.execute("CREATE TABLE analysis_runs (run_id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, "
+                 "analyzed INTEGER NOT NULL, skipped INTEGER NOT NULL, judge_calls INTEGER NOT NULL, "
+                 "duration_ms INTEGER NOT NULL)")
+    conn.execute("INSERT INTO analysis_runs (started_at, analyzed, skipped, judge_calls, duration_ms) "
+                 "VALUES ('2026-01-01 00:00:00', 1, 0, 0, 5)")
+    conn.commit()
+    conn.close()
+
+    upgraded = store.connect(old)
+    run = run_incremental(upgraded, mode="rules")
+    rows = [dict(r) for r in upgraded.execute("SELECT run_id, mode, judge_failures FROM analysis_runs ORDER BY run_id")]
+    assert rows == [{"run_id": 1, "mode": None, "judge_failures": 0},
+                    {"run_id": run["run_id"], "mode": "rules", "judge_failures": 0}]

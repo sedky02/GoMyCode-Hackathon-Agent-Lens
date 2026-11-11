@@ -84,9 +84,13 @@ CREATE TABLE IF NOT EXISTS analysis_runs (
     analyzed    INTEGER NOT NULL,
     skipped     INTEGER NOT NULL,
     judge_calls INTEGER NOT NULL,
-    duration_ms INTEGER NOT NULL
+    duration_ms INTEGER NOT NULL,
+    mode           TEXT,
+    judge_failures INTEGER NOT NULL DEFAULT 0
 );
 """
+# Columns added after the first release; databases created before then are upgraded on connect.
+ADDED_COLUMNS = {"analysis_runs": {"mode": "TEXT", "judge_failures": "INTEGER NOT NULL DEFAULT 0"}}
 
 EVENT_COLUMNS = [
     "event_id", "session_id", "sequence_number", "timestamp", "event_type", "role", "content",
@@ -100,7 +104,16 @@ def connect(path=None):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(SCHEMA)
+    _add_missing_columns(conn)
     return conn
+
+
+def _add_missing_columns(conn):
+    for table, columns in ADDED_COLUMNS.items():
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        for name, definition in columns.items():
+            if name not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
 
 
 def _json_text(value):
