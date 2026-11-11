@@ -18,10 +18,7 @@ function SourceIndicator() {
         : 'Connecting…'
   return (
     <span title={title} className={`inline-flex items-center gap-2 text-xs ${mock || offline ? 'text-warn' : 'text-fg-muted'}`}>
-      <span className="relative flex h-2 w-2">
-        {live && <span className="absolute inset-0 animate-ping rounded-full bg-ok/40 [animation-duration:2.5s]" />}
-        <span className={`relative h-2 w-2 rounded-full ${live ? 'bg-ok' : mock || offline ? 'bg-warn' : 'bg-fg-subtle'}`} />
-      </span>
+      <span className={`h-2 w-2 rounded-full ${live ? 'bg-ok' : mock || offline ? 'bg-warn' : 'bg-fg-subtle'}`} />
       <span className="hidden sm:inline">{label}</span>
       <span className="sr-only sm:hidden">{label}</span>
     </span>
@@ -29,32 +26,21 @@ function SourceIndicator() {
 }
 
 const navCls = ({ isActive }) =>
-  `relative flex h-full items-center px-2.5 text-sm transition-colors sm:px-3 ${
+  `relative flex h-full items-center text-[15px] transition-colors ${
     isActive
-      ? 'text-fg after:absolute after:inset-x-2.5 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent sm:after:inset-x-3'
+      ? 'font-medium text-fg after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:bg-fg'
       : 'text-fg-muted hover:text-fg'
   }`
-
-function Logo() {
-  return (
-    <svg viewBox="0 0 32 32" className="h-6 w-6" aria-hidden>
-      <rect width="32" height="32" rx="7" className="fill-accent" />
-      <circle cx="14" cy="14" r="6.5" fill="none" stroke="white" strokeWidth="2.6" />
-      <path d="M19 19l5 5" stroke="white" strokeWidth="2.6" strokeLinecap="round" />
-    </svg>
-  )
-}
 
 export default function Layout() {
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur">
-        <div className="mx-auto flex h-13 max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
-          <Link to="/" className="flex shrink-0 items-center gap-2.5 text-fg">
-            <Logo />
-            <span className="hidden text-[15px] font-semibold tracking-tight min-[420px]:inline">AgentLens</span>
+      <header className="border-b-2 border-fg">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-5 px-4 sm:gap-8 sm:px-6">
+          <Link to="/" className="shrink-0 font-display text-xl font-semibold text-fg">
+            AgentLens
           </Link>
-          <nav className="flex h-full items-center">
+          <nav className="flex h-full items-center gap-4 sm:gap-6">
             <NavLink to="/" end className={navCls}>
               Overview
             </NavLink>
@@ -70,7 +56,7 @@ export default function Layout() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+      <main className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
         <Outlet />
       </main>
     </div>

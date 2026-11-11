@@ -13,6 +13,7 @@
 - `agentlens/` detection engine and API. `taxonomy.py` is the single source of outcome and subtype names.
 - `evaluate.py` scoring, `generate_dataset.py` dataset generator (seed 42 is the committed dataset).
 - `dashboard/` React + Vite frontend. Its mock data is a snapshot of real API responses, used only with `VITE_USE_MOCK=1`.
+  Follow `dashboard/DESIGN.md` for any UI change.
 
 ## Checks before committing
 

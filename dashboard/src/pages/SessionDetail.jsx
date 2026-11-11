@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
 import { api } from '../api.js'
 import {
   useApi,
@@ -18,7 +17,7 @@ import {
   SeverityBadge,
   buttonCls,
 } from '../components/ui.jsx'
-import { Timeline, DetectedCard, mismatchInfo, display } from '../components/Evidence.jsx'
+import { Timeline, DetectedCard, mismatchInfo, display, RED_PENCIL } from '../components/Evidence.jsx'
 
 function durationOf(a, b) {
   const t1 = Date.parse(String(a || '').replace(' ', 'T'))
@@ -40,7 +39,7 @@ function Row({ label, children }) {
 function PanelHeader({ children, right }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-      <h2 className="text-sm font-semibold text-fg">{children}</h2>
+      <h2 className="font-display text-[17px] font-semibold text-fg">{children}</h2>
       {right}
     </div>
   )
@@ -92,7 +91,7 @@ export default function SessionDetail() {
       if (info.claimed?.mismatch) {
         textMarks.push({
           value: display(info.claimed.value),
-          cls: 'bg-bad/20 text-[#ffc9cf] ring-1 ring-bad/50',
+          cls: RED_PENCIL,
           title: `Claimed "${display(info.claimed.value)}" but ${info.claimed.refKey} was "${display(f.details[info.claimed.refKey])}"`,
         })
       }
@@ -140,64 +139,58 @@ export default function SessionDetail() {
     <div>
       {back}
 
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        <div className="min-w-0">
-          <h1 className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xl font-semibold tracking-tight text-fg">
-            <span className="font-mono">{data.session_id}</span>
+      <div className="mb-10">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <h1 className="font-display text-[28px] font-semibold leading-tight text-fg">Session {data.session_id}</h1>
             {analysis && <OutcomeBadge outcome={analysis.outcome} size="lg" />}
             {analysis?.failure_type && <TypeBadge type={analysis.failure_type} />}
-          </h1>
-          <div className="mt-1.5 flex flex-wrap gap-x-2 text-sm tabular-nums text-fg-subtle">
-            <span>{fmtTime(data.started_at)}</span>
-            {dur && <span>· {dur} duration</span>}
-            <span>· {events.length} events</span>
-            <span>· {evidenceIds.size} evidence events</span>
           </div>
+          {issueIds.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {issueIds.map((iid) => (
+                <Link key={iid} to={`/issues/${iid}`} className={buttonCls('secondary')}>
+                  Part of issue #{iid}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
-        {issueIds.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {issueIds.map((iid) => (
-              <Link key={iid} to={`/issues/${iid}`} className={buttonCls('secondary')}>
-                Part of issue #{iid} <ArrowUpRight className="h-3.5 w-3.5 text-fg-muted" />
-              </Link>
-            ))}
-          </div>
-        )}
+        <div className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-fg-muted">
+          <span>{fmtTime(data.started_at)}</span>
+          {dur && <span>{dur} long</span>}
+          <span>{events.length} events</span>
+          <span>{evidenceIds.size} marked as evidence</span>
+        </div>
+        {analysis?.reason && <p className="mt-5 max-w-3xl text-[19px] leading-relaxed text-fg">{analysis.reason}</p>}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main: detected + timeline */}
-        <div className="min-w-0 space-y-6 lg:col-span-2">
+      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-3">
+        <div className="min-w-0 space-y-10 lg:col-span-2">
           {detectedFindings.map((f) => (
-            <Card key={f.finding_id} className="border-l-2 border-l-bad p-4">
-              <DetectedCard details={f.details} />
-            </Card>
+            <DetectedCard key={f.finding_id} details={f.details} />
           ))}
 
-          <Card>
-            <PanelHeader
-              right={
-                <span className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-                  <span className="h-2 w-2 rounded-full bg-evidence" /> Evidence
-                </span>
-              }
-            >
-              Session timeline
-            </PanelHeader>
-            <div className="p-4 sm:p-5">
+          <section className="border-t-2 border-fg pt-2.5">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-display text-lg font-semibold text-fg">Transcript</h2>
+              <span className="text-sm text-fg-muted">
+                <mark className="bg-evidence px-1 text-evidence-ink">Highlighted</mark> events support the verdict
+              </span>
+            </div>
+            <div className="mt-1">
               <Timeline events={events} evidenceIds={evidenceIds} redValues={redValues} textMarks={textMarks} flashId={flashId} />
             </div>
-          </Card>
+          </section>
         </div>
 
         {/* Side: analysis */}
-        <aside className="min-w-0 space-y-6 lg:sticky lg:top-20 lg:self-start">
+        <aside className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:self-start">
           <Card>
             <PanelHeader>Analysis</PanelHeader>
             {!analysis ? (
               <div className="px-4 py-5 text-sm text-fg-muted">This session has not been analyzed yet.</div>
             ) : (
-              <>
                 <dl className="divide-y divide-line px-4">
                   <Row label="Outcome">
                     <OutcomeBadge outcome={analysis.outcome} />
@@ -224,24 +217,19 @@ export default function SessionDetail() {
                     <SourceBadge source={analysis.source} />
                   </Row>
                 </dl>
-                {analysis.reason && (
-                  <p className="border-t border-line px-4 py-3.5 text-sm leading-relaxed text-fg-muted">{analysis.reason}</p>
-                )}
-              </>
             )}
 
             {evidenceIds.size > 0 && (
               <div className="border-t border-line px-4 py-3.5">
-                <div className="mb-2 text-xs text-fg-subtle">Jump to evidence</div>
+                <div className="mb-2 text-sm text-fg-muted">Jump to evidence</div>
                 <div className="flex flex-wrap gap-1.5">
                   {[...evidenceIds].sort((a, b) => a - b).map((eid) => (
                     <button
                       key={eid}
                       onClick={() => jumpTo(eid)}
-                      className="inline-flex h-6 items-center gap-1.5 rounded border border-line-strong px-2 font-mono text-xs text-fg-muted transition-colors hover:border-evidence/60 hover:text-fg"
+                      className="inline-flex h-7 items-center rounded-sm bg-evidence/45 px-2 text-[13px] font-medium tabular-nums text-evidence-ink transition-colors hover:bg-evidence focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-evidence" />
-                      ev {eid}
+                      Event {eid}
                     </button>
                   ))}
                 </div>
@@ -260,7 +248,7 @@ export default function SessionDetail() {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       <TypeBadge type={f.failure_type} />
                       <SeverityBadge severity={f.severity} />
-                      <span className="ml-auto text-xs tabular-nums text-fg-subtle">{pct(f.confidence)} conf.</span>
+                      <span className="ml-auto text-xs tabular-nums text-fg-subtle">{pct(f.confidence)} confidence</span>
                     </div>
                     {f.tool && (
                       <div className="mt-2 text-xs text-fg-subtle">
@@ -271,9 +259,9 @@ export default function SessionDetail() {
                     {f.issue_id != null && (
                       <Link
                         to={`/issues/${f.issue_id}`}
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent-fg hover:text-fg"
+                        className="mt-2 inline-block text-[13px] font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
                       >
-                        View issue #{f.issue_id} <ArrowUpRight className="h-3 w-3" />
+                        View issue #{f.issue_id}
                       </Link>
                     )}
                   </li>
@@ -283,7 +271,7 @@ export default function SessionDetail() {
           )}
 
           {analysis && !findings.length && analysis.outcome !== 'failed' && (
-            <p className="px-1 text-xs text-fg-subtle">No hidden failures detected in this session ({humanize(analysis.outcome)}).</p>
+            <p className="text-sm text-fg-muted">No hidden failures detected in this session ({humanize(analysis.outcome)}).</p>
           )}
         </aside>
       </div>

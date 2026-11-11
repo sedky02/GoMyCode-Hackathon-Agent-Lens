@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, CircleCheck } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { api } from '../api.js'
 import {
   useApi,
   pct,
-  Card,
   PageHeader,
   Loading,
   ErrorState,
+  Meter,
   EmptyState,
   SeverityBadge,
   TypeBadge,
@@ -22,9 +22,7 @@ export function PriorityBar({ value }) {
   return (
     <div className="flex items-center gap-2.5" title={`Priority ${v.toFixed(1)} / 100`}>
       <span className="w-9 text-right text-sm font-medium tabular-nums text-fg">{v.toFixed(1)}</span>
-      <div className="h-1 w-full min-w-16 overflow-hidden rounded-full bg-line-strong">
-        <div className="h-full rounded-full bg-fg-muted" style={{ width: `${v}%` }} />
-      </div>
+      <Meter share={v / 100} className="w-full min-w-16" />
     </div>
   )
 }
@@ -44,7 +42,6 @@ export default function Issues() {
         <ErrorState error={error} onRetry={reload} />
       ) : !data?.length ? (
         <EmptyState
-          icon={CircleCheck}
           title="No issues detected"
           hint="Run an analysis from the Overview page."
           action={
@@ -54,7 +51,7 @@ export default function Issues() {
           }
         />
       ) : (
-        <Card className="overflow-hidden">
+        <div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -65,15 +62,15 @@ export default function Issues() {
                   <Th align="right">Sessions</Th>
                   <Th align="right">Avg conf.</Th>
                   <Th className="w-56">Priority</Th>
-                  <th className="w-8" />
+                  <th className="w-8 border-b-2 border-fg" />
                 </tr>
               </thead>
               <tbody>
                 {data.map((issue, i) => (
                   <LinkRow key={issue.issue_id} to={`/issues/${issue.issue_id}`}>
-                    <Td className="py-3 pr-0 align-top tabular-nums text-fg-subtle">{i + 1}</Td>
-                    <Td className="min-w-72 py-3">
-                      <div className="font-medium text-fg">{issue.title}</div>
+                    <Td className="py-3.5 pr-0 align-top font-display text-[17px] font-semibold tabular-nums text-fg-subtle">{i + 1}</Td>
+                    <Td className="min-w-72 py-3.5">
+                      <div className="font-display text-[17px] font-semibold text-fg">{issue.title}</div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                         <TypeBadge type={issue.failure_type} />
                         {(issue.tools || []).map((t) => (
@@ -83,19 +80,19 @@ export default function Issues() {
                         ))}
                       </div>
                     </Td>
-                    <Td className="py-3 align-top">
+                    <Td className="py-3.5 align-top">
                       <SeverityBadge severity={issue.severity} />
                     </Td>
-                    <Td align="right" className="py-3 align-top font-medium tabular-nums text-fg">
+                    <Td align="right" className="py-3.5 align-top font-display text-[17px] font-semibold tabular-nums text-fg">
                       {issue.session_count}
                     </Td>
-                    <Td align="right" className="py-3 align-top tabular-nums text-fg-muted">
+                    <Td align="right" className="py-3.5 align-top tabular-nums text-fg-muted">
                       {pct(issue.avg_confidence)}
                     </Td>
-                    <Td className="py-3 align-top">
+                    <Td className="py-3.5 align-top">
                       <PriorityBar value={issue.priority} />
                     </Td>
-                    <td className="pr-3 pt-3 align-top">
+                    <td className="pr-3 pt-4 align-top">
                       <ChevronRight className="h-4 w-4 text-fg-subtle opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" />
                     </td>
                   </LinkRow>
@@ -103,10 +100,10 @@ export default function Issues() {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-line px-4 py-2.5 text-xs tabular-nums text-fg-subtle">
+          <div className="border-t border-line py-2.5 text-sm tabular-nums text-fg-muted">
             {data.length} issue{data.length === 1 ? '' : 's'}, highest priority first
           </div>
-        </Card>
+        </div>
       )}
     </div>
   )
