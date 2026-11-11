@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, field_validator
 from . import demo
 from .pipeline import default_mode, run_incremental
 from .store import ROOT, connect, insert_events, parse_event, session_events
+from .taxonomy import OUTCOMES
 
 app = FastAPI(title="AgentLens", version="0.2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -32,7 +33,7 @@ def db():
         conn.close()
 
 
-Outcome = Literal["success", "recovered", "failed", "ambiguous"]
+Outcome = Literal[OUTCOMES]
 MAX_BATCH_EVENTS = 5000
 
 
@@ -163,7 +164,7 @@ def reset(conn=Depends(db)):
 
 @app.get("/v1/overview")
 def overview(conn=Depends(db)):
-    outcomes = {k: 0 for k in ("success", "recovered", "failed", "ambiguous")}
+    outcomes = dict.fromkeys(OUTCOMES, 0)
     for r in conn.execute("SELECT outcome, COUNT(*) AS n FROM analyses GROUP BY outcome"):
         outcomes[r["outcome"]] = r["n"]
     last = conn.execute("SELECT * FROM analysis_runs ORDER BY run_id DESC LIMIT 1").fetchone()

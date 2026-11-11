@@ -18,12 +18,13 @@ from pathlib import Path
 
 from agentlens import judge
 from agentlens.pipeline import analyze_many
+from agentlens.taxonomy import OUTCOMES, SUBTYPE_FIELD
 
 ROOT = Path(__file__).resolve().parent
 SOURCE_DB = ROOT / "supplyzpro_agent_logs.db"
 REPORT = ROOT / "eval_report.json"
-LABELS = ["success", "recovered", "failed", "ambiguous"]
-SUBTYPE = {"failed": "failure_type", "recovered": "recovery_type", "ambiguous": "ambiguity_type"}
+LABELS = list(OUTCOMES)
+SUBTYPE = SUBTYPE_FIELD
 EVENT_COLUMNS = ["event_id", "session_id", "sequence_number", "timestamp", "event_type", "role", "content",
                  "tool_name", "tool_arguments_json", "tool_result_json", "tool_status", "latency_ms"]
 

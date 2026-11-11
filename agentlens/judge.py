@@ -11,12 +11,9 @@ import re
 import sys
 from datetime import datetime
 
+from .taxonomy import AMBIGUITY_TYPES, FAILURE_TYPES, OUTCOMES, RECOVERY_TYPES
+
 PROMPT_VERSION = "v1"
-OUTCOMES = {"success", "recovered", "failed", "ambiguous"}
-FAILURE_TYPES = {"unsupported_success", "repeated_question", "no_progress", "wrong_record", "incomplete_request"}
-RECOVERY_TYPES = {"retry_success", "search_refinement", "clarification_success", "corrected_tool_arguments",
-                  "alternative_tool_success"}
-AMBIGUITY_TYPES = {"multiple_customers", "multiple_orders", "missing_information", "unclear_user_intent"}
 
 SYSTEM_PROMPT = """You audit sessions of an AI assistant for an ERP system (inventory, customers, orders, invoices).
 Decide whether the agent actually fulfilled the user's request, using ONLY the evidence in the timeline.

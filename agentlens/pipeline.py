@@ -13,11 +13,9 @@ from .reconstruct import build_session
 from .rules import Signal, run_rules
 from .snapshot import ANALYSIS_VERSION, needs_analysis, save_snapshot, trace_hash
 from .store import connect, session_events, session_ids
+from .taxonomy import SUBTYPE_FIELD
 
 JUDGE_BELOW_CONFIDENCE = 0.7
-JUDGE_SEVERITY = {"unsupported_success": "high", "incomplete_request": "high", "wrong_record": "medium",
-                  "no_progress": "medium", "repeated_question": "low"}
-SUBTYPE = {"failed": "failure_type", "recovered": "recovery_type", "ambiguous": "ambiguity_type"}
 
 
 def default_mode():
@@ -41,7 +39,7 @@ def judge_workers(mode):
 def _agrees(analysis, verdict):
     if analysis["outcome"] != verdict["outcome"]:
         return False
-    key = SUBTYPE.get(verdict["outcome"])
+    key = SUBTYPE_FIELD.get(verdict["outcome"])
     return key is None or analysis[key] == verdict[key]
 
 
@@ -72,7 +70,7 @@ def analyze_rows(session_id, rows, mode, conn):
         if verdict["outcome"] == "failed" and verdict["failure_type"]:
             ftype = verdict["failure_type"]
             failures = [Signal("failure", ftype, verdict["confidence"], verdict["reason"],
-                               analysis["evidence_event_ids"], severity=JUDGE_SEVERITY[ftype],
+                               analysis["evidence_event_ids"],
                                details={"judge_reason": verdict["reason"]},
                                signature=f"{ftype} | detected by LLM judge | {verdict['reason']}")]
     return analysis, failures, live, False

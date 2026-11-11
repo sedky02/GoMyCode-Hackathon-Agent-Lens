@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass, field
 
 from .reconstruct import TOKEN, contains, is_question, norm, numbers
+from .taxonomy import FAILURE_SEVERITY
 
 KEY_ARGS = ("product_name", "query", "customer_name", "product")
 TRANSIENT_ERROR = re.compile(r"timeout|timed out|temporar|unavailable|please retry|connection", re.I)
@@ -31,6 +32,10 @@ class Signal:
     tool: str | None = None
     details: dict = field(default_factory=dict)
     signature: str = ""
+
+    def __post_init__(self):
+        if self.kind == "failure" and self.severity is None:
+            self.severity = FAILURE_SEVERITY[self.type]
 
 
 def common_phrase(a, b):
@@ -88,7 +93,7 @@ def _no_progress_signal(s, run):
         "failure", "no_progress", 0.9,
         f"{first.name} was called {len(run)} times with identical arguments {first.args} and returned the "
         f"identical result every time; the agent never refined the query or asked the user to clarify.",
-        evidence, severity="medium", tool=first.name,
+        evidence, tool=first.name,
         details={"tool": first.name, "arguments": first.args, "repeats": len(run),
                  "result_count": first.count},
         signature=f"no_progress | tool={first.name} | identical call repeated with identical result "
@@ -112,7 +117,7 @@ def detect_unsupported_success(s):
         "failure", "unsupported_success", 0.95,
         f"Every {last.name} call failed (last error: '{last.error}'), yet the agent's final message claims "
         f"success: \"{final['content']}\"",
-        evidence, severity="high", tool=last.name,
+        evidence, tool=last.name,
         details={"requested": s.user_messages[0]["content"] if s.user_messages else None,
                  "tool": last.name, "tool_status": "error", "returned": last.error,
                  "claimed": final["content"]},
@@ -149,7 +154,7 @@ def detect_wrong_record(s):
                 f"The user asked about '{requested}' but {tc.name} was called with {arg}='{value}' "
                 f"(never mentioned by the user). The agent then reported that record's value as if it "
                 f"belonged to '{requested}'.",
-                evidence, severity="medium", tool=tc.name,
+                evidence, tool=tc.name,
                 details={"requested": requested, "queried": value, "returned": returned,
                          "claimed": requested, "claimed_value": sorted(value_nums)[0]},
                 signature=f"wrong_record | tool={tc.name} | key argument not grounded in the user request "
@@ -180,7 +185,7 @@ def detect_incomplete_request(s):
                 f"The user asked for '{clause(user_text, stem)}'. {tc.name} returned {key}=null "
                 f"(status: {tc.data.get('status')}), so that part was never done, but the agent claimed: "
                 f"\"{clause(final['content'], stem)}\".",
-                evidence, severity="high", tool=tc.name,
+                evidence, tool=tc.name,
                 details={"requested": clause(user_text, stem), "field": key, "returned": None,
                          "status": tc.data.get("status"), "claimed": clause(final["content"], stem)},
                 signature=f"incomplete_request | tool={tc.name} | result field {key} missing "
@@ -224,7 +229,7 @@ def detect_repeated_question(s):
                         "failure", "repeated_question", 0.9,
                         f"The agent asked for the customer's {slot}, but the user had already provided it "
                         f"('{value}') in an earlier message.",
-                        evidence, severity="low", tool=None,
+                        evidence,
                         details={"asked_for": slot, "already_provided": value, "asked": q["content"]},
                         signature=f"repeated_question | slot={slot} | agent asked for information the user "
                                   f"already provided",
