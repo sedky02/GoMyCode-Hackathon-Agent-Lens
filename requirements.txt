@@ -1,6 +1,6 @@
-fastapi
-uvicorn
-httpx
-openai
-scikit-learn
-sentence-transformers
+fastapi==0.162.4
+uvicorn==0.54.0
+httpx==0.28.1
+openai==3.49.0
+scikit-learn==1.9.1
+sentence-transformers==6.2.0
