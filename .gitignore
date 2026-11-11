@@ -5,3 +5,5 @@ eval_report.json
 __pycache__/
 .pytest_cache/
 phish-monitor/
+.claude/
+CLAUDE.local.md
