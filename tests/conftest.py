@@ -54,3 +54,12 @@ def live_server():
     yield f"http://127.0.0.1:{port}"
     server.should_exit = True
     thread.join(timeout=5)
+
+
+@pytest.fixture()
+def offline_embeddings(monkeypatch):
+    """Keeps tests fast and offline; the MiniLM path is exercised by the CI end-to-end job."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    from agentlens import grouping
+    monkeypatch.setattr(grouping, "embed", lambda texts: TfidfVectorizer().fit_transform(texts).toarray())
