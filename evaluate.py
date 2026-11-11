@@ -6,6 +6,7 @@ every session and compares its verdicts to the labels.
     python evaluate.py                # rules, plus llm and hybrid if the judge is configured
     python evaluate.py --mode rules
     python evaluate.py --show-errors
+    python evaluate.py --db heldout.db --min-accuracy 0.95    # another dataset, fail below a threshold
 """
 
 import argparse
@@ -25,8 +26,8 @@ EVENT_COLUMNS = ["event_id", "session_id", "sequence_number", "timestamp", "even
                  "tool_name", "tool_arguments_json", "tool_result_json", "tool_status", "latency_ms"]
 
 
-def load():
-    src = sqlite3.connect(SOURCE_DB)
+def load(db_path=SOURCE_DB):
+    src = sqlite3.connect(f"file:{Path(db_path).resolve()}?mode=ro", uri=True)
     src.row_factory = sqlite3.Row
     sessions = {}
     for r in src.execute(f"SELECT {', '.join(EVENT_COLUMNS)} FROM events ORDER BY session_id, sequence_number"):
@@ -115,6 +116,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["rules", "llm", "hybrid", "all"], default="all")
     parser.add_argument("--show-errors", action="store_true")
+    parser.add_argument("--db", type=Path, default=SOURCE_DB, help="dataset to score (default: the committed one)")
+    parser.add_argument("--report", type=Path,
+                        help=f"where to write the JSON report (default: {REPORT.name}, only for the default dataset)")
+    parser.add_argument("--min-accuracy", type=float, help="exit non-zero if accuracy is below this (0-1)")
+    parser.add_argument("--min-macro-f1", type=float, help="exit non-zero if macro F1 is below this (0-1)")
     args = parser.parse_args()
 
     modes = ["rules", "llm", "hybrid"] if args.mode == "all" else [args.mode]
@@ -123,7 +129,7 @@ def main():
             raise SystemExit("LLM judge not configured (AGENTLENS_LLM_BASE_URL / AGENTLENS_LLM_MODEL).")
         modes = ["rules"]
 
-    sessions, truth = load()
+    sessions, truth = load(args.db)
     results = {}
     for mode in modes:
         preds = predict(sessions, mode)
@@ -140,10 +146,19 @@ def main():
                           f"[{p['source']}] {p['reason'][:140]}")
 
     primary = "hybrid" if "hybrid" in results else modes[-1]
-    report = {"mode": primary, **results[primary],
-              "modes": {m: {"accuracy": r["accuracy"], "macro_f1": r["macro_f1"]} for m, r in results.items()}}
-    REPORT.write_text(json.dumps(report, indent=2))
-    print(f"\nWrote {REPORT.name} (primary mode: {primary})")
+    report_path = args.report or (REPORT if args.db.resolve() == SOURCE_DB.resolve() else None)
+    if report_path:
+        report = {"mode": primary, **results[primary],
+                  "modes": {m: {"accuracy": r["accuracy"], "macro_f1": r["macro_f1"]} for m, r in results.items()}}
+        report_path.write_text(json.dumps(report, indent=2))
+        print(f"\nWrote {report_path.name} (primary mode: {primary})")
+
+    below = [f"{name} {results[primary][key]:.3f} < {minimum}"
+             for name, key, minimum in (("accuracy", "accuracy", args.min_accuracy),
+                                        ("macro F1", "macro_f1", args.min_macro_f1))
+             if minimum is not None and results[primary][key] < minimum]
+    if below:
+        raise SystemExit(f"\nFAILED threshold ({primary}): " + "; ".join(below))
 
 
 if __name__ == "__main__":
