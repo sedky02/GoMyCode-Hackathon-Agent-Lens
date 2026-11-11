@@ -1,8 +1,6 @@
 """AgentLens API.   Run:  uvicorn agentlens.api:app --port 8100"""
 
 import json
-import threading
-from datetime import datetime
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -10,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 
 from . import demo
+from .job import AnalysisJob
 from .pipeline import default_mode, run_incremental
 from .store import ROOT, connect, insert_events, parse_event, session_events
 from .taxonomy import OUTCOMES
@@ -18,11 +17,7 @@ app = FastAPI(title="AgentLens", version="0.2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 EVAL_REPORT = ROOT / "eval_report.json"
 RESETTABLE_TABLES = ["events", "session_snapshots", "analyses", "findings", "issues", "analysis_runs"]
-
-_job_lock = threading.Lock()
-_job = {"running": False, "phase": "idle", "mode": None, "total": 0, "done": 0, "skipped": 0,
-        "judge_calls": 0, "judge_failures": 0, "current": None, "started_at": None,
-        "error": None, "last_run": None}
+job = AnalysisJob()
 
 
 def db():
@@ -86,35 +81,30 @@ def ingest(batch: EventBatch, conn=Depends(db)):
     return {"accepted": insert_events(conn, [e.model_dump(exclude_none=True) for e in batch.events])}
 
 
+@app.get("/healthz")
+def health():
+    return {"status": "ok"}
+
+
 # ---- analysis runs in a background thread; clients poll /v1/analyze/status ----
 
-def _run_job():
+def _run_analysis(progress):
     conn = connect()
     try:
-        summary = run_incremental(conn, progress=lambda **status: _job.update(status))
-        _job.update(phase="done", last_run=summary)
-    except Exception as exc:
-        _job.update(phase="error", error=f"{type(exc).__name__}: {exc}")
+        return run_incremental(conn, progress=progress)
     finally:
         conn.close()
-        _job["running"] = False
 
 
 @app.post("/v1/analyze")
 def analyze():
-    with _job_lock:
-        started = not _job["running"]
-        if started:
-            _job.update(running=True, phase="starting", mode=default_mode(), total=0, done=0, skipped=0,
-                        judge_calls=0, judge_failures=0, current=None, error=None,
-                        started_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            threading.Thread(target=_run_job, daemon=True).start()
-    return {"started": started, **_job}
+    started = job.start(default_mode(), _run_analysis)
+    return {"started": started, **job.snapshot()}
 
 
 @app.get("/v1/analyze/status")
 def analyze_status():
-    return dict(_job)
+    return job.snapshot()
 
 
 # ---- demo controls: replay dataset waves from the dashboard ----
@@ -135,7 +125,7 @@ def demo_status(conn=Depends(db)):
     wave1, wave2 = demo.waves()
     return {"wave1": _wave_info(conn, wave1), "wave2": _wave_info(conn, wave2),
             "events_ingested": conn.execute("SELECT COUNT(*) FROM events").fetchone()[0],
-            "analysis_running": _job["running"], "mode": default_mode()}
+            "analysis_running": job.running, "mode": default_mode()}
 
 
 @app.post("/v1/demo/waves/{wave}")
@@ -150,13 +140,12 @@ def send_wave(wave: int, conn=Depends(db)):
 
 @app.post("/v1/demo/reset")
 def reset(conn=Depends(db)):
-    if _job["running"]:
+    if job.running:
         raise HTTPException(409, "an analysis run is in progress; wait for it to finish")
     for table in RESETTABLE_TABLES:
         conn.execute(f"DELETE FROM {table}")
     conn.commit()
-    _job.update(phase="idle", total=0, done=0, skipped=0, judge_calls=0, judge_failures=0,
-                current=None, error=None, last_run=None)
+    job.clear()
     return {"reset": True, "kept": "llm_cache (cached LLM verdicts make the next run fast)"}
 
 

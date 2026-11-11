@@ -45,3 +45,7 @@ def test_unknown_ids_and_filters_are_client_errors(client):
     assert client.get("/v1/issues/999").status_code == 404
     assert client.get("/v1/sessions", params={"outcome": "bogus"}).status_code == 422
     assert client.post("/v1/demo/waves/3").status_code == 404
+
+
+def test_health_endpoint(client):
+    assert client.get("/healthz").json() == {"status": "ok"}
