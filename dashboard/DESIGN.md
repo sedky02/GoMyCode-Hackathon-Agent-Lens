@@ -3,20 +3,20 @@ version: alpha
 name: AgentLens dashboard
 description: An audit tool for engineers who check an AI agent's claims against what its tools returned. It should read like a working paper, plain and exact.
 colors:
-  ground: "#e9eee6"
-  sheet: "#f7f9f4"
-  inset: "#dde5d9"
-  rule: "#c7d2c2"
-  rule-strong: "#9aaa96"
-  ink: "#16211b"
-  ink-muted: "#46544b"
-  ink-subtle: "#5a685e"
-  ok: "#23764a"
-  info: "#1f6aa8"
-  bad: "#be2b25"
-  warn: "#8f5b00"
+  ground: "#151d19"
+  sheet: "#1c2621"
+  inset: "#25312b"
+  rule: "#303f37"
+  rule-strong: "#4c6156"
+  ink: "#e8ede6"
+  ink-muted: "#adb9b0"
+  ink-subtle: "#87968c"
+  ok: "#5cbd88"
+  info: "#6bafe8"
+  bad: "#f2726b"
+  warn: "#dea54b"
   highlighter: "#ffe14d"
-  highlighter-ink: "#5f4b00"
+  highlighter-ink: "#3b2f00"
 typography:
   display:
     fontFamily: IBM Plex Sans Condensed
@@ -41,15 +41,16 @@ components:
     textColor: "{colors.sheet}"
     rounded: "{rounded.sm}"
   section-heading:
-    borderTop: "2px solid {colors.ink}"
+    borderTop: "2px solid {colors.ink-subtle}"
 ---
 
 ## Overview
 
 AgentLens compares what a user asked, what the agent looked up, what the tool returned and what
-the agent claimed. That is an audit, so the dashboard borrows from an auditor's working paper:
-pale green ledger paper, dark ink, a red pencil for discrepancies, a yellow highlighter for
-evidence, and tick and cross marks next to each compared value.
+the agent claimed. That is an audit, so the dashboard borrows from an auditor's ledger: a dark
+green ledger-cover ground, chalk-coloured text, red for discrepancies, a yellow highlighter for
+evidence, and tick and cross marks next to each compared value. It is dark only; the people who
+use it are engineers reading traces.
 
 The tokens live in `src/index.css` under `@theme`. Tailwind class names keep their older names:
 `canvas` is ground, `surface` is sheet, `raised` is inset, `line` is rule, `fg` is ink,
@@ -57,16 +58,16 @@ The tokens live in `src/index.css` under `@theme`. Tailwind class names keep the
 
 ## Colors
 
-- **Ground (#e9eee6):** the page. Ledger paper, tinted green on purpose and not cream.
-- **Sheet (#f7f9f4):** a lighter sheet for the few things that are separate objects: the demo
-  controls and the side panels on a session.
-- **Inset (#dde5d9):** row hover, code blocks, type tags.
-- **Ink (#16211b):** text, rules, primary buttons, meters, focus rings. There is no separate
+- **Ground (#151d19):** the page. A dark green slate, tinted on purpose and not neutral near-black.
+- **Sheet (#1c2621):** a slightly lifted sheet for the few things that are separate objects: the
+  demo controls and the side panels on a session.
+- **Inset (#25312b):** row hover, code blocks, type tags.
+- **Ink (#e8ede6):** text, rules, primary buttons, meters, focus rings. There is no separate
   accent hue; actions are ink. About 14:1 on ground.
-- **Ink muted (#46544b)** and **ink subtle (#5a685e):** secondary text, about 7:1 and 5:1 on ground.
+- **Ink muted (#adb9b0)** and **ink subtle (#87968c):** secondary text, about 8:1 and 5:1 on ground.
 - **Status (ok, info, bad, warn):** outcome and severity only, as a dot, a bar segment or a tint.
 - **Red pencil (bad):** also marks a value that disagrees with its reference, always with an underline.
-- **Highlighter (#ffe14d):** marks evidence events and nothing else.
+- **Highlighter (#ffe14d):** marks evidence events and nothing else. Text on it is always highlighter-ink.
 
 ## Typography
 
@@ -79,16 +80,17 @@ The tokens live in `src/index.css` under `@theme`. Tailwind class names keep the
 
 ## Layout
 
-- One column, `max-w-7xl`, left-aligned. The header is a plain bar with a 2px ink rule; it does not stick.
-- A section starts with a 2px ink rule and a heading (`SectionTitle`). Its content sits directly
-  on the page: figures in a grid (`Figures`, `Figure`), tables with a 2px ink rule under the
+- One column, `max-w-7xl`, left-aligned. The header is a plain bar with a 2px rule; it does not stick.
+- A section starts with a 2px rule and a heading (`SectionTitle`). Its content sits directly
+  on the page: figures in a grid (`Figures`, `Figure`), tables with a 2px rule under the
   column heads and hairlines between rows. Tables are not wrapped in cards.
+- Heavy 2px rules use ink subtle, never full ink: on the dark ground a full-ink rule outweighs the text.
 - 48px between sections, 16 to 24px inside them.
 - The session page opens with the verdict sentence, then the claim check, then the transcript.
 
 ## Elevation & Depth
 
-Flat. No shadows and no blur. A sheet is distinguished by its lighter fill and a hairline border.
+Flat. No shadows and no blur. A sheet is distinguished by its slightly lighter fill and a hairline border.
 
 ## Shapes
 
@@ -107,7 +109,7 @@ claim check (`DetectedCard`), the transcript (`Timeline`) and `RED_PENCIL`.
 - Do build new pages from the components above and the tokens in `src/index.css`.
 - Do add a token here and in `@theme` before a page uses a new colour or size.
 - Do keep red for failures and mismatches, and yellow for evidence.
-- Don't add a second accent colour, gradients, shadows, blur or dark mode without changing this file first.
+- Don't add a second accent colour, gradients, shadows, blur or a light theme without changing this file first.
 - Don't wrap tables or figure rows in cards, and don't bring back grids of boxed stat tiles.
 - Don't use mono for labels, all-caps labels, middle-dot metadata strings or arrow glyphs on links.
-- Don't use Inter, a near-black ground with one bright accent, or a cream ground with a terracotta accent.
+- Don't use Inter, a neutral near-black ground with one bright accent (indigo, lime), or a cream ground with a terracotta accent.

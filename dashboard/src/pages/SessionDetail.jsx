@@ -171,7 +171,7 @@ export default function SessionDetail() {
             <DetectedCard key={f.finding_id} details={f.details} />
           ))}
 
-          <section className="border-t-2 border-fg pt-2.5">
+          <section className="border-t-2 border-fg-subtle pt-2.5">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="font-display text-lg font-semibold text-fg">Transcript</h2>
               <span className="text-sm text-fg-muted">
@@ -227,7 +227,7 @@ export default function SessionDetail() {
                     <button
                       key={eid}
                       onClick={() => jumpTo(eid)}
-                      className="inline-flex h-7 items-center rounded-sm bg-evidence/45 px-2 text-[13px] font-medium tabular-nums text-evidence-ink transition-colors hover:bg-evidence focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+                      className="inline-flex h-7 items-center rounded-sm bg-evidence/85 px-2 text-[13px] font-medium tabular-nums text-evidence-ink transition-colors hover:bg-evidence focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
                     >
                       Event {eid}
                     </button>

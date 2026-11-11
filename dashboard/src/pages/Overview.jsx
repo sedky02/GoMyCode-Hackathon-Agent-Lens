@@ -20,7 +20,7 @@ import {
 
 const fmtDuration = (ms) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`)
 
-const numCell = 'px-3 py-2 text-right tabular-nums last:pr-0'
+const numCell = 'px-2 py-2 text-right tabular-nums last:pr-0'
 
 function Totals({ totals }) {
   const items = [
@@ -150,7 +150,7 @@ function Panel({ title, hint, children }) {
 
 function ColHead({ align = 'right', children }) {
   return (
-    <th scope="col" className={`border-b border-fg px-3 pb-1.5 first:pl-0 last:pr-0 font-display text-[13px] font-semibold text-fg-muted ${align === 'right' ? 'text-right' : 'text-left'}`}>
+    <th scope="col" className={`border-b border-fg-subtle px-2 pb-1.5 first:pl-0 last:pr-0 font-display text-[13px] font-semibold text-fg-muted ${align === 'right' ? 'text-right' : 'text-left'}`}>
       {children}
     </th>
   )
@@ -166,7 +166,7 @@ function PerClass({ perClass }) {
             <ColHead>Precision</ColHead>
             <ColHead>Recall</ColHead>
             <ColHead>F1</ColHead>
-            <ColHead>Sessions</ColHead>
+            <ColHead>Count</ColHead>
           </tr>
         </thead>
         <tbody>

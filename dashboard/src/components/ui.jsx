@@ -149,7 +149,7 @@ export function Card({ className = '', children, ...rest }) {
 
 export function SectionTitle({ children, description, right }) {
   return (
-    <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t-2 border-fg pt-2.5">
+    <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t-2 border-fg-subtle pt-2.5">
       <div className="min-w-0">
         <h2 className="font-display text-lg font-semibold text-fg">{children}</h2>
         {description && <p className="mt-0.5 text-sm text-fg-muted">{description}</p>}
@@ -228,7 +228,7 @@ export function Th({ align = 'left', className = '', children }) {
   return (
     <th
       scope="col"
-      className={`h-9 whitespace-nowrap border-b-2 border-fg px-3 font-display text-[13px] font-semibold text-fg-muted first:pl-0 ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
+      className={`h-9 whitespace-nowrap border-b-2 border-fg-subtle px-3 font-display text-[13px] font-semibold text-fg-muted first:pl-0 ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
     >
       {children}
     </th>
@@ -300,7 +300,7 @@ export function ErrorState({ error, onRetry }) {
 
 export function EmptyState({ title = 'Nothing here', hint, action }) {
   return (
-    <div className="border-t-2 border-fg pt-4">
+    <div className="border-t-2 border-fg-subtle pt-4">
       <div className="font-display text-lg font-semibold text-fg">{title}</div>
       {hint && <div className="mt-1 max-w-md text-sm text-fg-muted">{hint}</div>}
       {action && <div className="mt-4">{action}</div>}

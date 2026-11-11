@@ -8,36 +8,36 @@
 
   --radius-sm: 3px;
 
-  /* Paper: canvas is the page, surface is a lighter sheet laid on it, raised is hover and inset. */
-  --color-canvas: #e9eee6;
-  --color-surface: #f7f9f4;
-  --color-raised: #dde5d9;
-  --color-line: #c7d2c2;
-  --color-line-strong: #9aaa96;
+  /* Ledger cover: canvas is the page, surface is a lifted sheet, raised is hover and inset. */
+  --color-canvas: #151d19;
+  --color-surface: #1c2621;
+  --color-raised: #25312b;
+  --color-line: #303f37;
+  --color-line-strong: #4c6156;
 
-  /* Ink: fg > fg-muted > fg-subtle. All pass AA on canvas. */
-  --color-fg: #16211b;
-  --color-fg-muted: #46544b;
-  --color-fg-subtle: #5a685e;
+  /* Chalk: fg > fg-muted > fg-subtle. All pass AA on canvas and surface. */
+  --color-fg: #e8ede6;
+  --color-fg-muted: #adb9b0;
+  --color-fg-subtle: #87968c;
 
-  /* Actions are ink, not a separate hue. */
-  --color-accent: #16211b;
-  --color-accent-hover: #2e3d34;
+  /* Actions are chalk on the dark ground, not a separate hue. */
+  --color-accent: #e8ede6;
+  --color-accent-hover: #ffffff;
 
   /* Status: outcome and severity only. */
-  --color-ok: #23764a;
-  --color-info: #1f6aa8;
-  --color-bad: #be2b25;
-  --color-warn: #8f5b00;
+  --color-ok: #5cbd88;
+  --color-info: #6bafe8;
+  --color-bad: #f2726b;
+  --color-warn: #dea54b;
 
-  /* Highlighter: marks evidence, nothing else. */
+  /* Highlighter: marks evidence, nothing else. Always paired with evidence-ink text. */
   --color-evidence: #ffe14d;
-  --color-evidence-ink: #5f4b00;
+  --color-evidence-ink: #3b2f00;
 }
 
-html { color-scheme: light; }
+html { color-scheme: dark; }
 body { background: var(--color-canvas); }
-::selection { background: var(--color-evidence); color: var(--color-fg); }
+::selection { background: var(--color-evidence); color: var(--color-evidence-ink); }
 
 @keyframes flash-ring {
   0% { box-shadow: 0 0 0 0 rgb(255 225 77 / 0.9); }
@@ -46,8 +46,8 @@ body { background: var(--color-canvas); }
 .flash { animation: flash-ring 0.9s ease-out 2; }
 
 @keyframes flash-accent {
-  0% { box-shadow: 0 0 0 0 rgb(22 33 27 / 0.35); }
-  100% { box-shadow: 0 0 0 8px rgb(22 33 27 / 0); }
+  0% { box-shadow: 0 0 0 0 rgb(232 237 230 / 0.4); }
+  100% { box-shadow: 0 0 0 8px rgb(232 237 230 / 0); }
 }
 .flash-accent { animation: flash-accent 0.9s ease-out 2; }
 

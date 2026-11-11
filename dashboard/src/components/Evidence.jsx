@@ -162,7 +162,7 @@ export function DetectedCard({ details }) {
   const anyMismatch = flow.some((f) => info[f.key].mismatch)
 
   return (
-    <section className={`border-t-2 pt-2.5 ${anyMismatch ? 'border-bad' : 'border-fg'}`}>
+    <section className={`border-t-2 pt-2.5 ${anyMismatch ? 'border-bad' : 'border-fg-subtle'}`}>
       <h2 className="font-display text-lg font-semibold text-fg">Claim check</h2>
       {flow.length > 0 && (
         <div className="mt-3 grid gap-y-4 sm:auto-cols-fr sm:grid-flow-col sm:divide-x sm:divide-line">

@@ -35,7 +35,7 @@ const navCls = ({ isActive }) =>
 export default function Layout() {
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="border-b-2 border-fg">
+      <header className="border-b-2 border-fg-subtle">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-5 px-4 sm:gap-8 sm:px-6">
           <Link to="/" className="shrink-0 font-display text-xl font-semibold text-fg">
             AgentLens

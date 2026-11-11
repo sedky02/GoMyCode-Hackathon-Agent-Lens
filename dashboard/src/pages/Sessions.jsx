@@ -128,7 +128,7 @@ export default function Sessions() {
                   <Th>Source</Th>
                   <Th align="right">Events</Th>
                   <Th>Started</Th>
-                  <th className="w-8 border-b-2 border-fg" />
+                  <th className="w-8 border-b-2 border-fg-subtle" />
                 </tr>
               </thead>
               <tbody>

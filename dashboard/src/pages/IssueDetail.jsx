@@ -68,7 +68,9 @@ export default function IssueDetail() {
             </span>
           </Figure>
           <Figure label="Failure type" className="col-span-2 md:col-span-1">
-            <TypeBadge type={data.failure_type} />
+            <span className="font-sans text-sm leading-normal">
+              <TypeBadge type={data.failure_type} />
+            </span>
           </Figure>
         </Figures>
         {data.tools?.length > 0 && (
@@ -96,7 +98,7 @@ export default function IssueDetail() {
                   <Th>Session</Th>
                   <Th>Confidence</Th>
                   <Th>Reason</Th>
-                  <th className="w-8 border-b-2 border-fg" />
+                  <th className="w-8 border-b-2 border-fg-subtle" />
                 </tr>
               </thead>
               <tbody>

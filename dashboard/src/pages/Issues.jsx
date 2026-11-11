@@ -62,7 +62,7 @@ export default function Issues() {
                   <Th align="right">Sessions</Th>
                   <Th align="right">Avg conf.</Th>
                   <Th className="w-56">Priority</Th>
-                  <th className="w-8 border-b-2 border-fg" />
+                  <th className="w-8 border-b-2 border-fg-subtle" />
                 </tr>
               </thead>
               <tbody>
