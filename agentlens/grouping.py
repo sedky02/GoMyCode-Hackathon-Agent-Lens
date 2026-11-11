@@ -1,6 +1,7 @@
 """Group failure findings into issues with embeddings + clustering, then rank them."""
 
 import json
+import logging
 import math
 from collections import Counter
 
@@ -15,6 +16,7 @@ TITLES = {
     "repeated_question": "Repeated question: agent re-asked for information the user already gave",
 }
 
+logger = logging.getLogger(__name__)
 _model = None
 
 
@@ -26,7 +28,7 @@ def embed(texts):
             _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
         return _model.encode(texts, normalize_embeddings=True)
     except Exception as exc:
-        print(f"[grouping] sentence-transformers unavailable ({exc}); falling back to TF-IDF")
+        logger.warning("sentence-transformers unavailable (%s); falling back to TF-IDF", exc)
         from sklearn.feature_extraction.text import TfidfVectorizer
         return TfidfVectorizer().fit_transform(texts).toarray()
 

@@ -6,6 +6,7 @@ Smoke test:  python -m agentlens.judge S008
 
 import hashlib
 import json
+import logging
 import os
 import re
 import sys
@@ -13,6 +14,7 @@ from datetime import datetime
 
 from .taxonomy import AMBIGUITY_TYPES, FAILURE_TYPES, OUTCOMES, RECOVERY_TYPES
 
+logger = logging.getLogger(__name__)
 PROMPT_VERSION = "v1"
 
 SYSTEM_PROMPT = """You audit sessions of an AI assistant for an ERP system (inventory, customers, orders, invoices).
@@ -128,7 +130,7 @@ def judge(session, digest, conn):
             resp = client.chat.completions.create(**params)
         verdict = _normalize(_extract_json(resp.choices[0].message.content), session)
     except Exception as exc:
-        print(f"[judge] {session.session_id}: {exc}", file=sys.stderr)
+        logger.warning("judge call failed for %s: %s", session.session_id, exc)
         return None, True
     conn.execute("INSERT OR REPLACE INTO llm_cache VALUES (?, ?, ?)",
                  (key, json.dumps(verdict), datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
