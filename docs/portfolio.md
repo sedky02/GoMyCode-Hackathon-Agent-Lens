@@ -7,14 +7,14 @@ rules-only mode; rerun it before publishing if the code has changed.
 
 Start from a clean state for all of them: `docker compose up --build`, open
 http://localhost:5173, click **Reset demo** if any data is present. Use a 1440 px wide browser
-window, dark theme as shipped, and hide the bookmarks bar.
+window and hide the bookmarks bar. The dashboard has one theme (light).
 
-Screens 1, 2 and 4 are already captured in `docs/img/` (1568 px wide, with a visible mouse cursor).
-Retake them without the cursor for the portfolio.
+Screens 1, 2 and 4 are already captured in `docs/img/` (1556 px wide, top of each page only).
+Retake them at full size for the portfolio.
 
 | # | Screen | State it must be in |
 | --- | --- | --- |
-| 1 | Session detail, `/sessions/S008` (hero image) | Both waves sent and analyzed. The "Detected" card shows Requested "Samsung TV 43-inch", Queried and Returned "Samsung TV 65-inch", Claimed "Samsung TV 43-inch"; the timeline shows the highlighted 65-inch values; the Analysis panel shows Failed, `wrong_record`, 92%. |
+| 1 | Session detail, `/sessions/S008` (hero image) | Both waves sent and analyzed. The "Claim check" strip shows Requested "Samsung TV 43-inch", Queried and Returned "Samsung TV 65-inch", Claimed "Samsung TV 43-inch"; the transcript shows the 65-inch values underlined in red and the evidence events marked in yellow; the Analysis panel shows Failed, `wrong_record`, 92%. |
 | 2 | Overview after the second run | Both waves sent, analysis run twice. "Last analysis run" shows Analyzed 10, Skipped 110. Outcome bar shows 62 / 24 / 21 / 13. Top-right badge says "Live API". |
 | 3 | Overview, Evaluation section | Scroll so the scores and the confusion matrix are both visible. Mode `rules`. |
 | 4 | Issues list, `/issues` | Five issues ranked by priority, "Unsupported success" first at priority 95.0 with 6 sessions. |
@@ -34,7 +34,7 @@ Record at 1440 px width. Start with the demo reset and the Overview page open.
 | 0:10 to 0:22 | Click **Send wave 1**, then **Run analysis**; progress bar runs | "Here I replay 120 recorded sessions of an ERP assistant and analyze them. Deterministic rules compare what the user asked, what the tools returned, and what the agent claimed." |
 | 0:22 to 0:30 | Outcome bar: 62 success, 24 recovered, 21 failed, 13 ambiguous | "21 sessions failed. Most of them have no error anywhere in the logs." |
 | 0:30 to 0:38 | Open **Issues**; hover the top issue | "Failures are grouped into issues and ranked by how many sessions they affect, their severity and the confidence." |
-| 0:38 to 0:58 | Open **Sessions**, filter Failed, open **S008**. Pause on the "Detected" card, then scroll the timeline to the highlighted values | "This is the important part. The user asked about the 43-inch TV. The agent looked up the 65-inch model. The tool returned success, and the agent reported 11 units as if they were the 43-inch stock. AgentLens shows the exact events that prove it." |
+| 0:38 to 0:58 | Open **Sessions**, filter Failed, open **S008**. Pause on the verdict sentence and the "Claim check" strip, then scroll the transcript to the red-underlined values | "This is the important part. The user asked about the 43-inch TV. The agent looked up the 65-inch model. The tool returned success, and the agent reported 11 units as if they were the 43-inch stock. AgentLens shows the exact events that prove it." |
 | 0:58 to 1:08 | Back to Overview; click **Send wave 2**, then **Run analysis** | "When new events arrive, only the sessions that changed are re-analyzed: 10 analyzed, 110 skipped." |
 | 1:08 to 1:20 | Scroll to the Evaluation section, then cut to the terminal with the out-of-template result | "Against hidden labels the rules score 100 percent on this dataset and on held-out seeds. On hand-written sessions from a different domain they drop to 75 percent accuracy and miss four of six failures, which is why there is an optional LLM judge for the cases rules can't decide." |
 
