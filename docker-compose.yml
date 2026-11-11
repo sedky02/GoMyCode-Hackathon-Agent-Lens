@@ -1,0 +1,24 @@
+# One command for the API and the dashboard:  docker compose up --build
+# Dashboard: http://localhost:5173    API docs: http://localhost:8100/docs
+services:
+  api:
+    build: .
+    # The API has no authentication, so it is only published on the loopback interface.
+    ports:
+      - "127.0.0.1:8100:8100"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - agentlens-data:/data
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  agentlens-data:
